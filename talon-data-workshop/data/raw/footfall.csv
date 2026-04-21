@@ -1,0 +1,78 @@
+footfall_id,device_id,store_id,store_name,campaign_id,exposed_at,visited_at,latency_hours,converted
+FF_00001,d-05d0,ST_006,Amazon Fresh Canary Wharf,CMP_007,2024-11-05 08:10:00,2024-11-07 07:22:00,47.2,True
+FF_00002,d-0978,ST_004,Starbucks Waterloo,CMP_002,2024-11-05 08:06:00,2024-11-06 10:54:00,26.8,True
+FF_00003,d-0452,ST_008,Barclays Canary Wharf,CMP_009,2024-11-05 08:21:00,2024-11-07 02:45:00,42.4,True
+FF_00004,d-1231,ST_005,Nike Town Oxford Street,CMP_003,2024-11-05 07:41:00,,,False
+FF_00005,d-1972,ST_007,HSBC Piccadilly Branch,CMP_005,2024-11-05 09:16:00,,,False
+FF_00006,d-19eb,ST_002,McDonald's Victoria,CMP_001,2024-11-05 06:32:00,,,False
+FF_00007,d-1231,ST_008,Barclays Canary Wharf,CMP_009,2024-11-05 07:59:00,,,False
+FF_00008,d-15b5,ST_003,Starbucks Oxford Street,CMP_002,2024-11-05 09:19:00,,,False
+FF_00009,d-14d5,ST_003,Starbucks Oxford Street,CMP_002,2024-11-05 09:16:00,,,False
+FF_00010,d-15b0,ST_001,McDonald's Piccadilly,CMP_001,2024-11-05 06:31:00,,,False
+FF_00011,d-1ec1,ST_003,Starbucks Oxford Street,CMP_002,2024-11-05 06:41:00,2024-11-06 16:47:00,34.1,True
+FF_00012,d-15b5,ST_005,Nike Town Oxford Street,CMP_003,2024-11-05 06:20:00,2024-11-06 12:56:00,30.6,True
+FF_00013,d-1ae1,ST_005,Nike Town Oxford Street,CMP_003,2024-11-05 06:32:00,,,False
+FF_00014,d-214f,ST_002,McDonald's Victoria,CMP_001,2024-11-05 08:08:00,,,False
+FF_00015,d-14d5,ST_003,Starbucks Oxford Street,CMP_002,2024-11-05 06:43:00,,,False
+FF_00016,d-06af,ST_006,Amazon Fresh Canary Wharf,CMP_007,2024-11-05 08:24:00,2024-11-07 01:48:00,41.4,True
+FF_00017,d-0cd6,ST_001,McDonald's Piccadilly,CMP_001,2024-11-05 08:44:00,,,False
+FF_00018,d-059a,ST_004,Starbucks Waterloo,CMP_002,2024-11-05 09:16:00,,,False
+FF_00019,d-214f,ST_001,McDonald's Piccadilly,CMP_001,2024-11-05 08:07:00,,,False
+FF_00020,d-0a18,ST_005,Nike Town Oxford Street,CMP_003,2024-11-05 08:44:00,,,False
+FF_00021,d-1972,ST_004,Starbucks Waterloo,CMP_002,2024-11-05 08:55:00,,,False
+FF_00022,d-11af,ST_002,McDonald's Victoria,CMP_001,2024-11-05 08:56:00,2024-11-06 06:14:00,21.3,True
+FF_00023,d-1972,ST_008,Barclays Canary Wharf,CMP_009,2024-11-05 06:52:00,2024-11-05 14:10:00,7.3,True
+FF_00024,d-1203,ST_006,Amazon Fresh Canary Wharf,CMP_007,2024-11-05 07:42:00,2024-11-06 01:48:00,18.1,True
+FF_00025,d-1ae1,ST_002,McDonald's Victoria,CMP_001,2024-11-05 07:21:00,2024-11-05 13:39:00,6.3,True
+FF_00026,d-0ddb,ST_004,Starbucks Waterloo,CMP_002,2024-11-05 06:36:00,2024-11-05 20:54:00,14.3,True
+FF_00027,d-0e1f,ST_007,HSBC Piccadilly Branch,CMP_005,2024-11-05 07:03:00,,,False
+FF_00028,d-05f0,ST_006,Amazon Fresh Canary Wharf,CMP_007,2024-11-05 08:27:00,,,False
+FF_00029,d-09e7,ST_003,Starbucks Oxford Street,CMP_002,2024-11-05 08:07:00,,,False
+FF_00030,d-11af,ST_008,Barclays Canary Wharf,CMP_009,2024-11-05 07:18:00,,,False
+FF_00031,d-0cd6,ST_007,HSBC Piccadilly Branch,CMP_005,2024-11-05 08:09:00,,,False
+FF_00032,d-243f,ST_004,Starbucks Waterloo,CMP_002,2024-11-05 08:29:00,,,False
+FF_00033,d-1394,ST_005,Nike Town Oxford Street,CMP_003,2024-11-05 08:06:00,,,False
+FF_00034,d-1972,ST_005,Nike Town Oxford Street,CMP_003,2024-11-05 08:17:00,2024-11-05 13:53:00,5.6,True
+FF_00035,d-0978,ST_005,Nike Town Oxford Street,CMP_003,2024-11-05 09:06:00,,,False
+FF_00036,d-1ef4,ST_006,Amazon Fresh Canary Wharf,CMP_007,2024-11-05 06:11:00,,,False
+FF_00037,d-19eb,ST_004,Starbucks Waterloo,CMP_002,2024-11-05 07:32:00,,,False
+FF_00038,d-1231,ST_007,HSBC Piccadilly Branch,CMP_005,2024-11-05 08:09:00,,,False
+FF_00039,d-1ae1,ST_005,Nike Town Oxford Street,CMP_003,2024-11-05 08:39:00,,,False
+FF_00040,d-26cf,ST_003,Starbucks Oxford Street,CMP_002,2024-11-05 06:24:00,,,False
+FF_00041,d-20a7,ST_006,Amazon Fresh Canary Wharf,CMP_007,2024-11-05 09:13:00,2024-11-06 14:19:00,29.1,True
+FF_00042,d-1ef4,ST_001,McDonald's Piccadilly,CMP_001,2024-11-05 06:11:00,2024-11-06 16:29:00,34.3,True
+FF_00043,d-1972,ST_008,Barclays Canary Wharf,CMP_009,2024-11-05 06:38:00,,,False
+FF_00044,d-09d7,ST_003,Starbucks Oxford Street,CMP_002,2024-11-05 07:23:00,,,False
+FF_00045,d-1203,ST_003,Starbucks Oxford Street,CMP_002,2024-11-05 07:40:00,,,False
+FF_00046,d-1ec1,ST_006,Amazon Fresh Canary Wharf,CMP_007,2024-11-05 08:09:00,,,False
+FF_00047,d-0a18,ST_008,Barclays Canary Wharf,CMP_009,2024-11-05 09:01:00,,,False
+FF_00048,d-1972,ST_001,McDonald's Piccadilly,CMP_001,2024-11-05 07:34:00,2024-11-05 13:16:00,5.7,True
+FF_00049,d-19ae,ST_005,Nike Town Oxford Street,CMP_003,2024-11-05 09:05:00,,,False
+FF_00050,d-0581,ST_008,Barclays Canary Wharf,CMP_009,2024-11-05 07:07:00,,,False
+FF_00051,d-14d5,ST_004,Starbucks Waterloo,CMP_002,2024-11-05 09:04:00,2024-11-06 08:22:00,23.3,True
+FF_00052,d-1c38,ST_007,HSBC Piccadilly Branch,CMP_005,2024-11-05 06:37:00,,,False
+FF_00053,d-243f,ST_001,McDonald's Piccadilly,CMP_001,2024-11-05 08:26:00,,,False
+FF_00054,d-26cf,ST_004,Starbucks Waterloo,CMP_002,2024-11-05 06:04:00,,,False
+FF_00055,d-19ae,ST_003,Starbucks Oxford Street,CMP_002,2024-11-05 07:45:00,,,False
+FF_00056,d-19ae,ST_008,Barclays Canary Wharf,CMP_009,2024-11-05 09:08:00,,,False
+FF_00057,d-0978,ST_004,Starbucks Waterloo,CMP_002,2024-11-05 08:23:00,2024-11-06 16:17:00,31.9,True
+FF_00058,d-1c38,ST_007,HSBC Piccadilly Branch,CMP_005,2024-11-05 07:20:00,,,False
+FF_00059,d-11af,ST_006,Amazon Fresh Canary Wharf,CMP_007,2024-11-05 08:19:00,,,False
+FF_00060,d-059a,ST_008,Barclays Canary Wharf,CMP_009,2024-11-05 06:49:00,,,False
+FF_00061,d-10a1,ST_005,Nike Town Oxford Street,CMP_003,2024-11-05 06:57:00,,,False
+FF_00062,d-1ec1,ST_005,Nike Town Oxford Street,CMP_003,2024-11-05 09:00:00,2024-11-06 18:54:00,33.9,True
+FF_00063,d-1203,ST_008,Barclays Canary Wharf,CMP_009,2024-11-05 07:29:00,,,False
+FF_00064,d-10a1,ST_005,Nike Town Oxford Street,CMP_003,2024-11-05 06:31:00,,,False
+FF_00065,d-0a18,ST_007,HSBC Piccadilly Branch,CMP_005,2024-11-05 07:41:00,,,False
+FF_00066,d-1ee8,ST_005,Nike Town Oxford Street,CMP_003,2024-11-05 06:10:00,2024-11-06 16:34:00,34.4,True
+FF_00067,d-15b5,ST_008,Barclays Canary Wharf,CMP_009,2024-11-05 08:47:00,2024-11-06 07:59:00,23.2,True
+FF_00068,d-09e7,ST_005,Nike Town Oxford Street,CMP_003,2024-11-05 08:23:00,,,False
+FF_00069,d-0978,ST_002,McDonald's Victoria,CMP_001,2024-11-05 08:37:00,,,False
+FF_00070,d-243f,ST_004,Starbucks Waterloo,CMP_002,2024-11-05 06:12:00,,,False
+FF_00071,d-1c38,ST_004,Starbucks Waterloo,CMP_002,2024-11-05 08:43:00,2024-11-05 13:55:00,5.2,True
+FF_00072,d-20a7,ST_008,Barclays Canary Wharf,CMP_009,2024-11-05 06:25:00,,,False
+FF_00073,d-0978,ST_001,McDonald's Piccadilly,CMP_001,2024-11-05 08:20:00,,,False
+FF_00074,d-05f0,ST_007,HSBC Piccadilly Branch,CMP_005,2024-11-05 08:47:00,,,False
+FF_00075,d-1972,ST_008,Barclays Canary Wharf,CMP_009,2024-11-05 08:46:00,2024-11-07 06:58:00,46.2,True
+FF_00076,d-4f9a,ST_001,McDonald's Piccadilly,CMP_999,2024-11-05 08:10:00,2024-11-05 09:45:00,1.6,True
+FF_00077,d-7c2b,ST_003,Starbucks Oxford Street,CMP_002,2024-11-05 08:22:00,2024-11-07 10:14:00,49.9,True

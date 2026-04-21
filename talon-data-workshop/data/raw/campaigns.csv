@@ -1,0 +1,11 @@
+campaign_id,brand,agency,target_segment,start_date,end_date,budget_gbp,status
+CMP_001,McDonald's,Talon / OMD,Commuter,2024-11-04,2024-11-17,280000,live
+CMP_002,Starbucks,Talon / MG OMD,Coffee Drinker,2024-11-01,2024-11-14,150000,live
+CMP_003,Nike,Talon / Wavemaker,M 25-40,2024-11-05,2024-11-18,320000,live
+CMP_004,Spotify,Talon / Dentsu,Student,2024-10-28,2024-11-10,95000,completed
+CMP_005,HSBC,Talon / Mindshare,High Income,2024-11-01,2024-11-30,410000,live
+CMP_006,TfL,Talon / M/SIX,Commuter,2024-10-01,2024-12-31,180000,live
+CMP_007,Amazon,Talon / EssenceMediacom,Shopper,2024-11-05,2024-11-19,275000,live
+CMP_008,Deliveroo,Talon / Havas,M25-40,2024-11-05,2024-11-12,88000,live
+CMP_009,Barclays,Talon / Starcom,High Income,2024-11-01,2024-11-28,220000,live
+CMP_010,Heineken,Talon / Initiative,Shopper,2024-10-21,2024-11-04,165000,completed

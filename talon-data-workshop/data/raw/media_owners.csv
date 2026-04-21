@@ -1,0 +1,11 @@
+owner_id,owner_name,region,frame_count,contract_start,contract_end
+MO_001,JCDecaux,London,450,2022-01-01,2026-12-31
+MO_002,Clear Channel,London,380,2021-06-01,2025-06-30
+MO_003,Outdoor Plus,London,120,2023-01-01,2027-12-31
+MO_004,Global Outdoor,UK,890,2020-03-01,2025-03-31
+MO_005,Primesight,UK,210,2022-09-01,2026-08-31
+MO_006,Ocean Outdoor,London,95,2021-01-01,2024-12-31
+MO_007,Exterion Media,London,330,2023-06-01,2027-05-31
+MO_008,Storm,London,78,2022-04-01,2026-03-31
+MO_009,Signature Outdoor,UK,42,2021-11-01,2025-10-31
+MO_010,Wildstone,UK,65,2023-03-01,2027-02-28
