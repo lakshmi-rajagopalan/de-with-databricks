@@ -1,0 +1,41 @@
+visitor_id,name,country,primary_skill,hourly_rate,job_success_score,member_since,top_rated,is_verified
+112.108.116.218.5813156693594853,Aiden Marsh,US,React Development,45.00,92,2019-05-20,True,True
+113.221.205.42.9478949861700086,Priya Sharma,IN,Data Engineering,35.00,88,2020-03-14,False,True
+114.41.34.40.3665895407587144,Carlos Rivera,BR,Backend Development,30.00,79,2020-11-02,False,True
+116.86.104.152.9541644670089853,Sophie Laurent,FR,UX Design,55.00,N/A,2021-01-08,False,False
+117.30.249.118.1774789044877091,James Okoro,NG,Mobile Development,28.00,85,2019-08-30,False,True
+123.248.62.77.8669199898066131,Lin Wei,CN,Python Development,40.00,91,2018-12-01,True,True
+146.61.10.143.9555958439458102,Tomasz Kowalski,PL,DevOps,50.00,96,2017-07-22,True,True
+153.91.207.137.3106839504746820,Fatima Al-Hassan,AE,Content Writing,negotiable,73,2020-06-18,False,True
+168.206.171.222.6457807207416907,Marcus Chen,AU,Cloud Architecture,75.00,98,2016-03-05,True,True
+178.221.166.50.4413353456481963,Ayesha Khan,PK,Data Science,38.00,83,2020-09-12,False,True
+180.192.122.59.4034048133606968,Dmitri Petrov,UA,Spark Development,42.00,89,2019-02-27,False,True
+182.201.52.140.8257931165554636,Elena Santos,MX,Frontend Development,32.00,77,2021-01-15,False,False
+183.183.164.230.6572415069303488,Haruto Sato,JP,Machine Learning,60.00,94,2018-05-10,True,True
+183.28.138.83.6275448248017075,Andile Dube,ZA,Data Analysis,25.00,N/A,2021-02-05,False,True
+187.131.246.24.7652303608409502,Isabella Ferreira,BR,UI Design,35.00,81,2020-04-22,False,True
+193.163.209.201.6476685243956426,Arjun Mehta,IN,Big Data Engineering,45.00,93,2018-11-14,True,True
+194.229.112.207.3073543397884956,Nadia Volkova,RU,React Development,38.00,87,2019-10-08,False,True
+199.116.129.153.6638297907996333,Tyler Brooks,US,Node.js Development,55.00,95,2017-06-19,True,True
+200.202.231.190.4677150128525937,Valentina Cruz,CO,Content Writing,20.00,-5,2020-08-03,False,True
+22.96.65.106.4033210697775349,Oliver Watts,UK,Cloud Architecture,70.00,97,2016-09-28,True,True
+24.173.64.123.5913164520032732,Amara Diallo,SN,WordPress Development,22.00,75,2020-12-10,False,True
+30.235.122.117.9175452912617543,Zhang Wei,CN,Data Engineering,40.00,N/A,2021-02-01,False,False
+33.56.235.19.4359647642425608,Sofia Eriksson,SE,UX Design,58.00,90,2018-07-31,True,True
+44.143.113.61.8090612618948995,Kwame Asante,GH,Python Development,30.00,82,2020-02-14,False,True
+46.89.168.11.3969653694250819,Mariana Lima,BR,Marketing Analytics,28.00,78,2020-10-05,False,True
+53.212.173.76.4753413397189074,Raj Patel,IN,Full Stack Development,42.00,86,2019-06-17,False,True
+54.55.114.47.2869710607256063,Hannah Schmidt,DE,Data Visualization,52.00,92,2018-04-23,True,True
+60.98.11.180.7254036549647255,Lorenzo Rossi,IT,Backend Development,45.00,89,2019-03-08,False,True
+65.205.217.192.7409666059744832,Yuki Tanaka,JP,Machine Learning,55.00,91,2018-08-15,True,True
+73.108.85.122.9638732943144612,Evelyn Hughes,US,React Development,48.00,N/A,2021-01-28,False,True
+75.120.235.84.9719996549726992,Pedro Oliveira,PT,DevOps,35.00,84,2020-05-09,False,True
+75.27.138.85.7168203998699808,Amina Toure,CI,Content Writing,negotiable,70,2020-11-22,False,True
+75.40.229.220.2674905654954640,Victor Nguyen,VN,Full Stack Development,32.00,88,2019-12-03,False,True
+83.61.199.15.1947121891165237,Layla Hassan,EG,UI Design,25.00,76,2020-07-14,False,True
+85.227.59.238.7015160388825155,Markus Weber,AT,Cloud Architecture,65.00,93,2018-02-11,True,True
+88.29.158.18.1525231383716459,Nina Johansson,SE,Data Analysis,42.00,87,2019-07-25,False,True
+89.228.177.67.7484883732092691,Emeka Okonkwo,NG,Python Development,30.00,N/A,2021-01-10,False,False
+89.37.233.186.3827654944355096,Lena Fischer,DE,Machine Learning,60.00,95,2017-10-30,True,True
+92.211.132.146.9375169593996057,Ravi Kumar,IN,Spark Development,38.00,85,2020-01-17,False,True
+98.178.112.10.5518516531252438,Jessica Thompson,US,Data Science,52.00,-3,2020-03-28,True,True

@@ -1,0 +1,22 @@
+client_uid,company_name,country,industry,payment_verified,total_spend_usd,member_since,avg_rating
+CL_103376,TechFlow Solutions,US,Engineering & Architecture,True,12500.00,2019-03-15,4.8
+CL_124435,DataSpark Inc,CA,Data Science & Analytics,True,8750.00,2020-01-22,4.5
+CL_137329,NexGen Digital,UK,IT & Networking,True,32100.00,2018-07-09,4.9
+CL_138862,Pixel Bridge Studio,AU,Design & Creative,True,5400.00,2020-11-30,4.2
+CL_153810,CloudBase Systems,US,Engineering & Architecture,True,negotiable,2021-01-05,
+CL_215125,Agile Ventures,DE,Business Consulting,False,2200.00,2020-06-14,3.9
+CL_235412,Brightcore Media,US,Marketing & Sales,True,18900.00,2019-08-23,4.7
+CL_268623,Infinity Labs,IN,IT & Networking,True,6300.00,2021-02-01,4.1
+CL_279502,Streamline Solutions,CA,Engineering & Architecture,True,47500.00,2017-05-18,5.0
+CL_284573,Vertex Analytics,US,Data Science & Analytics,True,9800.00,2020-04-07,4.6
+CL_326307,BlueSky Products,AU,Product Management,False,,2019-12-12,4.3
+CL_366966,QuickBuild Tech,PH,IT & Networking,True,3100.00,2021-01-18,3.8
+CL_474892,MarketPulse,US,Marketing & Sales,True,22400.00,2018-02-28,4.9
+CL_567922,Nexus Consulting,UK,Business Consulting,True,11700.00,2019-09-03,4.4
+CL_596738,Helix Digital,US,Design & Creative,True,7800.00,2022-03-01,4.7
+CL_627638,DataForge,BR,Data Science & Analytics,True,4200.00,2020-07-11,4.0
+CL_724340,SkyHigh Systems,UA,Engineering & Architecture,True,15600.00,2019-01-30,4.8
+CL_792374,Codebase HQ,US,IT & Networking,True,not disclosed,2018-10-22,
+CL_849883,FrontRunner Digital,NG,Marketing & Sales,False,1900.00,2021-02-08,3.7
+CL_883819,Alpine Tech,CH,Engineering & Architecture,True,28900.00,2017-11-14,4.9
+CL_901321,Micro Talent,US,HR & Recruiting,True,5500.00,2020-09-25,4.5
