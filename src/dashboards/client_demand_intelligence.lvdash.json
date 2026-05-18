@@ -1,0 +1,546 @@
+{
+  "datasets": [
+    {
+      "name": "client_portfolio_overview",
+      "displayName": "1 · Client Portfolio Overview",
+      "query": "SELECT COUNT(DISTINCT client_uid) AS clients_tracked, SUM(jobs_posted) AS total_jobs_posted, SUM(total_impressions) AS total_impressions, ROUND(SUM(total_clicks) / NULLIF(SUM(total_impressions), 0) * 100, 2) AS avg_ctr_pct FROM workspace.de.mv_client_portfolio_summary"
+    },
+    {
+      "name": "top_client_accounts",
+      "displayName": "2 · Top Client Accounts",
+      "query": "SELECT company_name, active_jobs, total_impressions, total_clicks, ctr_pct, avg_budget_amount, unique_categories FROM workspace.de.mv_client_portfolio_summary ORDER BY total_impressions DESC LIMIT 15"
+    },
+    {
+      "name": "client_posting_watchlist",
+      "displayName": "3 · Posting Watchlist",
+      "query": "SELECT company_name, title, category, impressions, clicks, ctr_pct, opportunity_segment, recommended_action FROM workspace.de.mv_client_posting_performance WHERE is_active ORDER BY impressions DESC, ctr_pct ASC LIMIT 20"
+    },
+    {
+      "name": "client_category_benchmark",
+      "displayName": "4 · Category Benchmark",
+      "query": "SELECT company_name, category, client_active_jobs, client_impressions, client_ctr_pct, marketplace_ctr_pct, ctr_gap_pct, client_avg_budget_amount, marketplace_avg_budget_amount, budget_gap_amount FROM workspace.de.mv_client_category_benchmark WHERE client_impressions IS NOT NULL ORDER BY ABS(ctr_gap_pct) DESC LIMIT 20"
+    },
+    {
+      "name": "client_opportunities",
+      "displayName": "5 · Sales Call Opportunities",
+      "query": "SELECT company_name, title, category, impressions, ctr_pct, opportunity_type, recommended_action FROM workspace.de.mv_client_opportunities ORDER BY impressions DESC, ctr_pct ASC LIMIT 20"
+    },
+    {
+      "name": "marketplace_demand_snapshot",
+      "displayName": "6 · Marketplace Demand Snapshot",
+      "query": "SELECT category, impressions, clicks, ctr_pct, avg_budget_amount FROM workspace.de.mv_category_performance ORDER BY impressions DESC LIMIT 15"
+    }
+  ],
+  "pages": [
+    {
+      "name": "client_demand_intelligence",
+      "displayName": "Client Demand Intelligence",
+      "layout": [
+        {
+          "widget": {
+            "name": "counter_clients_tracked",
+            "queries": [
+              {
+                "name": "main_query",
+                "query": {
+                  "datasetName": "client_portfolio_overview",
+                  "fields": [
+                    {
+                      "name": "clients_tracked",
+                      "expression": "`clients_tracked`"
+                    }
+                  ],
+                  "disaggregated": false
+                }
+              }
+            ],
+            "spec": {
+              "version": 2,
+              "frame": {
+                "showTitle": true,
+                "title": "Clients Tracked"
+              },
+              "widgetType": "counter",
+              "encodings": {
+                "value": {
+                  "fieldName": "clients_tracked",
+                  "displayName": "Clients Tracked"
+                }
+              }
+            }
+          },
+          "position": {
+            "x": 0,
+            "y": 0,
+            "width": 3,
+            "height": 3
+          }
+        },
+        {
+          "widget": {
+            "name": "counter_jobs_posted",
+            "queries": [
+              {
+                "name": "main_query",
+                "query": {
+                  "datasetName": "client_portfolio_overview",
+                  "fields": [
+                    {
+                      "name": "total_jobs_posted",
+                      "expression": "`total_jobs_posted`"
+                    }
+                  ],
+                  "disaggregated": false
+                }
+              }
+            ],
+            "spec": {
+              "version": 2,
+              "frame": {
+                "showTitle": true,
+                "title": "Jobs Posted"
+              },
+              "widgetType": "counter",
+              "encodings": {
+                "value": {
+                  "fieldName": "total_jobs_posted",
+                  "displayName": "Jobs Posted"
+                }
+              }
+            }
+          },
+          "position": {
+            "x": 3,
+            "y": 0,
+            "width": 3,
+            "height": 3
+          }
+        },
+        {
+          "widget": {
+            "name": "counter_total_impressions",
+            "queries": [
+              {
+                "name": "main_query",
+                "query": {
+                  "datasetName": "client_portfolio_overview",
+                  "fields": [
+                    {
+                      "name": "total_impressions",
+                      "expression": "`total_impressions`"
+                    }
+                  ],
+                  "disaggregated": false
+                }
+              }
+            ],
+            "spec": {
+              "version": 2,
+              "frame": {
+                "showTitle": true,
+                "title": "Total Impressions"
+              },
+              "widgetType": "counter",
+              "encodings": {
+                "value": {
+                  "fieldName": "total_impressions",
+                  "displayName": "Total Impressions"
+                }
+              }
+            }
+          },
+          "position": {
+            "x": 6,
+            "y": 0,
+            "width": 3,
+            "height": 3
+          }
+        },
+        {
+          "widget": {
+            "name": "counter_avg_ctr_pct",
+            "queries": [
+              {
+                "name": "main_query",
+                "query": {
+                  "datasetName": "client_portfolio_overview",
+                  "fields": [
+                    {
+                      "name": "avg_ctr_pct",
+                      "expression": "`avg_ctr_pct`"
+                    }
+                  ],
+                  "disaggregated": false
+                }
+              }
+            ],
+            "spec": {
+              "version": 2,
+              "frame": {
+                "showTitle": true,
+                "title": "Average CTR %"
+              },
+              "widgetType": "counter",
+              "encodings": {
+                "value": {
+                  "fieldName": "avg_ctr_pct",
+                  "displayName": "Average CTR %"
+                }
+              }
+            }
+          },
+          "position": {
+            "x": 9,
+            "y": 0,
+            "width": 3,
+            "height": 3
+          }
+        },
+        {
+          "widget": {
+            "name": "top_client_accounts_table",
+            "queries": [
+              {
+                "name": "main_query",
+                "query": {
+                  "datasetName": "top_client_accounts",
+                  "fields": [
+                    {
+                      "name": "company_name",
+                      "expression": "`company_name`"
+                    },
+                    {
+                      "name": "active_jobs",
+                      "expression": "`active_jobs`"
+                    },
+                    {
+                      "name": "total_impressions",
+                      "expression": "`total_impressions`"
+                    },
+                    {
+                      "name": "total_clicks",
+                      "expression": "`total_clicks`"
+                    },
+                    {
+                      "name": "ctr_pct",
+                      "expression": "`ctr_pct`"
+                    },
+                    {
+                      "name": "avg_budget_amount",
+                      "expression": "`avg_budget_amount`"
+                    }
+                  ],
+                  "disaggregated": true
+                }
+              }
+            ],
+            "spec": {
+              "version": 2,
+              "frame": {
+                "showTitle": true,
+                "title": "Top Client Accounts"
+              },
+              "widgetType": "table",
+              "encodings": {
+                "columns": [
+                  {
+                    "fieldName": "company_name",
+                    "displayName": "Client"
+                  },
+                  {
+                    "fieldName": "active_jobs",
+                    "displayName": "Active Jobs"
+                  },
+                  {
+                    "fieldName": "total_impressions",
+                    "displayName": "Impressions"
+                  },
+                  {
+                    "fieldName": "total_clicks",
+                    "displayName": "Clicks"
+                  },
+                  {
+                    "fieldName": "ctr_pct",
+                    "displayName": "CTR %"
+                  },
+                  {
+                    "fieldName": "avg_budget_amount",
+                    "displayName": "Avg Budget"
+                  }
+                ]
+              }
+            }
+          },
+          "position": {
+            "x": 0,
+            "y": 3,
+            "width": 12,
+            "height": 8
+          }
+        },
+        {
+          "widget": {
+            "name": "client_opportunities_table",
+            "queries": [
+              {
+                "name": "main_query",
+                "query": {
+                  "datasetName": "client_opportunities",
+                  "fields": [
+                    {
+                      "name": "company_name",
+                      "expression": "`company_name`"
+                    },
+                    {
+                      "name": "title",
+                      "expression": "`title`"
+                    },
+                    {
+                      "name": "category",
+                      "expression": "`category`"
+                    },
+                    {
+                      "name": "impressions",
+                      "expression": "`impressions`"
+                    },
+                    {
+                      "name": "ctr_pct",
+                      "expression": "`ctr_pct`"
+                    },
+                    {
+                      "name": "opportunity_type",
+                      "expression": "`opportunity_type`"
+                    },
+                    {
+                      "name": "recommended_action",
+                      "expression": "`recommended_action`"
+                    }
+                  ],
+                  "disaggregated": true
+                }
+              }
+            ],
+            "spec": {
+              "version": 2,
+              "frame": {
+                "showTitle": true,
+                "title": "Sales Call Opportunities"
+              },
+              "widgetType": "table",
+              "encodings": {
+                "columns": [
+                  {
+                    "fieldName": "company_name",
+                    "displayName": "Client"
+                  },
+                  {
+                    "fieldName": "title",
+                    "displayName": "Job Title"
+                  },
+                  {
+                    "fieldName": "category",
+                    "displayName": "Category"
+                  },
+                  {
+                    "fieldName": "impressions",
+                    "displayName": "Impressions"
+                  },
+                  {
+                    "fieldName": "ctr_pct",
+                    "displayName": "CTR %"
+                  },
+                  {
+                    "fieldName": "opportunity_type",
+                    "displayName": "Opportunity"
+                  },
+                  {
+                    "fieldName": "recommended_action",
+                    "displayName": "Recommended Action"
+                  }
+                ]
+              }
+            }
+          },
+          "position": {
+            "x": 0,
+            "y": 11,
+            "width": 12,
+            "height": 8
+          }
+        },
+        {
+          "widget": {
+            "name": "client_category_benchmark_table",
+            "queries": [
+              {
+                "name": "main_query",
+                "query": {
+                  "datasetName": "client_category_benchmark",
+                  "fields": [
+                    {
+                      "name": "company_name",
+                      "expression": "`company_name`"
+                    },
+                    {
+                      "name": "category",
+                      "expression": "`category`"
+                    },
+                    {
+                      "name": "client_ctr_pct",
+                      "expression": "`client_ctr_pct`"
+                    },
+                    {
+                      "name": "marketplace_ctr_pct",
+                      "expression": "`marketplace_ctr_pct`"
+                    },
+                    {
+                      "name": "ctr_gap_pct",
+                      "expression": "`ctr_gap_pct`"
+                    },
+                    {
+                      "name": "client_avg_budget_amount",
+                      "expression": "`client_avg_budget_amount`"
+                    },
+                    {
+                      "name": "marketplace_avg_budget_amount",
+                      "expression": "`marketplace_avg_budget_amount`"
+                    }
+                  ],
+                  "disaggregated": true
+                }
+              }
+            ],
+            "spec": {
+              "version": 2,
+              "frame": {
+                "showTitle": true,
+                "title": "Category Benchmark"
+              },
+              "widgetType": "table",
+              "encodings": {
+                "columns": [
+                  {
+                    "fieldName": "company_name",
+                    "displayName": "Client"
+                  },
+                  {
+                    "fieldName": "category",
+                    "displayName": "Category"
+                  },
+                  {
+                    "fieldName": "client_ctr_pct",
+                    "displayName": "Client CTR %"
+                  },
+                  {
+                    "fieldName": "marketplace_ctr_pct",
+                    "displayName": "Market CTR %"
+                  },
+                  {
+                    "fieldName": "ctr_gap_pct",
+                    "displayName": "CTR Gap"
+                  },
+                  {
+                    "fieldName": "client_avg_budget_amount",
+                    "displayName": "Client Budget"
+                  },
+                  {
+                    "fieldName": "marketplace_avg_budget_amount",
+                    "displayName": "Market Budget"
+                  }
+                ]
+              }
+            }
+          },
+          "position": {
+            "x": 0,
+            "y": 19,
+            "width": 12,
+            "height": 8
+          }
+        },
+        {
+          "widget": {
+            "name": "marketplace_demand_snapshot_table",
+            "queries": [
+              {
+                "name": "main_query",
+                "query": {
+                  "datasetName": "marketplace_demand_snapshot",
+                  "fields": [
+                    {
+                      "name": "category",
+                      "expression": "`category`"
+                    },
+                    {
+                      "name": "impressions",
+                      "expression": "`impressions`"
+                    },
+                    {
+                      "name": "clicks",
+                      "expression": "`clicks`"
+                    },
+                    {
+                      "name": "ctr_pct",
+                      "expression": "`ctr_pct`"
+                    },
+                    {
+                      "name": "avg_budget_amount",
+                      "expression": "`avg_budget_amount`"
+                    }
+                  ],
+                  "disaggregated": true
+                }
+              }
+            ],
+            "spec": {
+              "version": 2,
+              "frame": {
+                "showTitle": true,
+                "title": "Marketplace Demand Snapshot"
+              },
+              "widgetType": "table",
+              "encodings": {
+                "columns": [
+                  {
+                    "fieldName": "category",
+                    "displayName": "Category"
+                  },
+                  {
+                    "fieldName": "impressions",
+                    "displayName": "Impressions"
+                  },
+                  {
+                    "fieldName": "clicks",
+                    "displayName": "Clicks"
+                  },
+                  {
+                    "fieldName": "ctr_pct",
+                    "displayName": "CTR %"
+                  },
+                  {
+                    "fieldName": "avg_budget_amount",
+                    "displayName": "Avg Budget"
+                  }
+                ]
+              }
+            }
+          },
+          "position": {
+            "x": 0,
+            "y": 27,
+            "width": 12,
+            "height": 8
+          }
+        }
+      ],
+      "pageType": "PAGE_TYPE_CANVAS",
+      "layoutVersion": "GRID_V1"
+    }
+  ],
+  "uiSettings": {
+    "theme": {
+      "widgetHeaderAlignment": "ALIGNMENT_UNSPECIFIED"
+    },
+    "applyModeEnabled": false
+  }
+}

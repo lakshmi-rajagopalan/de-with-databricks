@@ -28,12 +28,12 @@
       "name": "expectation_breakdown",
       "displayName": "2 · Per-Expectation Pass / Fail Breakdown",
       "queryLines": [
-        "SELECT e.dataset AS table_name, e.name AS expectation, SUM(e.passed_records) AS passed_records, SUM(e.failed_records) AS failed_records, SUM(e.passed_records) + SUM(e.failed_records) AS total_records, ROUND(SUM(e.passed_records) / NULLIF(SUM(e.passed_records) + SUM(e.failed_records), 0) * 100, 2) AS pass_rate_pct FROM event_log( :parameter ), LATERAL EXPLODE(FROM_JSON(details:flow_progress.data_quality.expectations, 'array<struct<name:string,dataset:string,passed_records:bigint,failed_records:bigint>>')) AS t(e) WHERE event_type = 'flow_progress' GROUP BY table_name, expectation ORDER BY failed_records DESC"
+        "SELECT e.dataset AS table_name, e.name AS expectation, SUM(e.passed_records) AS passed_records, SUM(e.failed_records) AS failed_records, SUM(e.passed_records) + SUM(e.failed_records) AS total_records, ROUND(SUM(e.passed_records) / NULLIF(SUM(e.passed_records) + SUM(e.failed_records), 0) * 100, 2) AS pass_rate_pct FROM event_log(:pipeline_id), LATERAL EXPLODE(FROM_JSON(details:flow_progress.data_quality.expectations, 'array<struct<name:string,dataset:string,passed_records:bigint,failed_records:bigint>>')) AS t(e) WHERE event_type = 'flow_progress' GROUP BY table_name, expectation ORDER BY failed_records DESC"
       ],
       "parameters": [
         {
           "displayName": "pipeline_id",
-          "keyword": "parameter",
+          "keyword": "pipeline_id",
           "dataType": "STRING",
           "defaultSelection": {
             "values": {

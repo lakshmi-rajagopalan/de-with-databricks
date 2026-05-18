@@ -1,0 +1,10 @@
+resources:
+  jobs:
+    metric_views:
+      name: metric-views
+      tasks:
+        - task_key: create_metric_views
+          notebook_task:
+            notebook_path: ../src/sql/07_metric_views.sql
+            source: WORKSPACE
+            warehouse_id: ${var.warehouse_id}

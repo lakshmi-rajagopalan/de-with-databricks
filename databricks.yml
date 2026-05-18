@@ -1,0 +1,38 @@
+bundle:
+  name: de-with-databricks
+
+include:
+  - resources/*.yml
+
+sync:
+  exclude:
+    - src/dlt/04_star_schema.sql
+
+variables:
+  catalog_name:
+    description: Unity Catalog catalog for the DLT pipeline.
+    default: workspace
+  schema_name:
+    description: Unity Catalog schema used as DLT target.
+    default: de
+  raw_data_path:
+    description: Volume path where raw CSV files are uploaded.
+    default: /Volumes/workspace/de/raw
+  warehouse_id:
+    description: SQL warehouse ID used by Lakeview dashboards.
+  client_dashboard_url:
+    description: Published URL for the Client Demand Intelligence dashboard.
+    default: ""
+  insights_dashboard_url:
+    description: Published URL for the Clickstream Insights dashboard.
+    default: ""
+  genie_space_url:
+    description: URL for the Genie space used by the app shell.
+    default: ""
+
+targets:
+  dev:
+    default: true
+    mode: development
+    workspace:
+      root_path: /Workspace/Users/${workspace.current_user.userName}/.bundle/${bundle.name}/${bundle.target}

@@ -1,0 +1,33 @@
+resources:
+  apps:
+    client_demand_shell:
+      name: clickstream-client-demand-app
+      description: Client-facing sales call shell for demand intelligence assets.
+      source_code_path: ../app
+      config:
+        command:
+          - flask
+          - --app
+          - app
+          - run
+          - --host=0.0.0.0
+          - --port=8000
+        env:
+          - name: APP_TITLE
+            value: Client Demand Intelligence App
+          - name: APP_SUBTITLE
+            value: Package the client dashboard, marketplace context, and Genie follow-up into one business-facing experience.
+          - name: CLIENT_DASHBOARD_NAME
+            value: Client Demand Intelligence
+          - name: CLIENT_DASHBOARD_URL
+            value: ${var.client_dashboard_url}
+          - name: INSIGHTS_DASHBOARD_NAME
+            value: Clickstream Insights
+          - name: INSIGHTS_DASHBOARD_URL
+            value: ${var.insights_dashboard_url}
+          - name: GENIE_SPACE_NAME
+            value: Clickstream Analytics
+          - name: GENIE_SPACE_URL
+            value: ${var.genie_space_url}
+          - name: WAREHOUSE_LABEL
+            value: Serverless Starter Warehouse

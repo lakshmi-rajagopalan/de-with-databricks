@@ -1,0 +1,19 @@
+resources:
+  pipelines:
+    clickstream_workshop:
+      name: clickstream-workshop
+      catalog: ${var.catalog_name}
+      target: ${var.schema_name}
+      channel: CURRENT
+      serverless: true
+      configuration:
+        raw_data_path: ${var.raw_data_path}
+      libraries:
+        - notebook:
+            path: ../src/dlt/01_bronze.py
+        - notebook:
+            path: ../src/dlt/02_silver.py
+        - notebook:
+            path: ../src/dlt/03_gold.py
+        - notebook:
+            path: ../src/dlt/04_star_schema.py

@@ -1,0 +1,556 @@
+{
+  "datasets": [
+    {
+      "name": "rows_processed_vs_dropped",
+      "displayName": "1 · Rows Processed vs Dropped per Table",
+      "queryLines": [
+        "SELECT origin.flow_name AS table_name, SUM(details:flow_progress.metrics.num_output_rows) AS rows_passed, SUM(details:flow_progress.data_quality.dropped_records) AS rows_dropped, ROUND(SUM(details:flow_progress.data_quality.dropped_records) / NULLIF(SUM(details:flow_progress.metrics.num_output_rows) + SUM(details:flow_progress.data_quality.dropped_records), 0) * 100, 2) AS drop_rate_pct FROM event_log(:pipeline_id) WHERE event_type = 'flow_progress' AND details:flow_progress.data_quality IS NOT NULL GROUP BY table_name ORDER BY rows_dropped DESC"
+      ],
+      "parameters": [
+        {
+          "displayName": "pipeline_id",
+          "keyword": "pipeline_id",
+          "dataType": "STRING",
+          "defaultSelection": {
+            "values": {
+              "dataType": "STRING",
+              "values": [
+                {
+                  "value": "__PIPELINE_ID__"
+                }
+              ]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "expectation_breakdown",
+      "displayName": "2 · Per-Expectation Pass / Fail Breakdown",
+      "queryLines": [
+        "SELECT e.dataset AS table_name, e.name AS expectation, SUM(e.passed_records) AS passed_records, SUM(e.failed_records) AS failed_records, SUM(e.passed_records) + SUM(e.failed_records) AS total_records, ROUND(SUM(e.passed_records) / NULLIF(SUM(e.passed_records) + SUM(e.failed_records), 0) * 100, 2) AS pass_rate_pct FROM event_log(:pipeline_id), LATERAL EXPLODE(FROM_JSON(details:flow_progress.data_quality.expectations, 'array<struct<name:string,dataset:string,passed_records:bigint,failed_records:bigint>>')) AS t(e) WHERE event_type = 'flow_progress' GROUP BY table_name, expectation ORDER BY failed_records DESC"
+      ],
+      "parameters": [
+        {
+          "displayName": "pipeline_id",
+          "keyword": "pipeline_id",
+          "dataType": "STRING",
+          "defaultSelection": {
+            "values": {
+              "dataType": "STRING",
+              "values": [
+                {
+                  "value": "__PIPELINE_ID__"
+                }
+              ]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "top_failing_expectations",
+      "displayName": "3 · Top Failing Expectations",
+      "queryLines": [
+        "SELECT e.name AS expectation, e.dataset AS table_name, SUM(e.failed_records) AS total_failures FROM event_log( :pipeline_id ), LATERAL EXPLODE(FROM_JSON(details:flow_progress.data_quality.expectations, 'array<struct<name:string,dataset:string,passed_records:bigint,failed_records:bigint>>')) AS t(e) WHERE event_type = 'flow_progress' AND e.failed_records > 0 GROUP BY expectation, table_name ORDER BY total_failures DESC"
+      ],
+      "parameters": [
+        {
+          "displayName": "pipeline_id",
+          "keyword": "pipeline_id",
+          "dataType": "STRING",
+          "defaultSelection": {
+            "values": {
+              "dataType": "STRING",
+              "values": [
+                {
+                  "value": "__PIPELINE_ID__"
+                }
+              ]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "drop_rate_trend",
+      "displayName": "4 · Drop Rate Trend Across Pipeline Runs",
+      "queryLines": [
+        "SELECT DATE_TRUNC('hour', timestamp) AS run_hour, origin.flow_name AS table_name, SUM(details:flow_progress.metrics.num_output_rows) AS rows_passed, SUM(details:flow_progress.data_quality.dropped_records) AS rows_dropped FROM event_log(:pipeline_id) WHERE event_type = 'flow_progress' AND details:flow_progress.data_quality IS NOT NULL GROUP BY run_hour, table_name ORDER BY run_hour, table_name"
+      ],
+      "parameters": [
+        {
+          "displayName": "pipeline_id",
+          "keyword": "pipeline_id",
+          "dataType": "STRING",
+          "defaultSelection": {
+            "values": {
+              "dataType": "STRING",
+              "values": [
+                {
+                  "value": "__PIPELINE_ID__"
+                }
+              ]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "expectation_event_log",
+      "displayName": "5 · Full Expectation Event Log",
+      "queryLines": [
+        "SELECT timestamp, origin.flow_name AS table_name, e.name AS expectation, e.passed_records, e.failed_records FROM event_log(:pipeline_id), LATERAL EXPLODE(FROM_JSON(details:flow_progress.data_quality.expectations, 'array<struct<name:string,dataset:string,passed_records:bigint,failed_records:bigint>>')) AS t(e) WHERE event_type = 'flow_progress' ORDER BY timestamp DESC, failed_records DESC LIMIT 200"
+      ],
+      "parameters": [
+        {
+          "displayName": "pipeline_id",
+          "keyword": "pipeline_id",
+          "dataType": "STRING",
+          "defaultSelection": {
+            "values": {
+              "dataType": "STRING",
+              "values": [
+                {
+                  "value": "__PIPELINE_ID__"
+                }
+              ]
+            }
+          }
+        }
+      ]
+    }
+  ],
+  "pages": [
+    {
+      "name": "quality",
+      "displayName": "Data Quality",
+      "layout": [
+        {
+          "widget": {
+            "name": "pipelineid",
+            "queries": [
+              {
+                "name": "parameter_dashboards/01f13faffd311b83b94201af910b410a/datasets/01f13fbec2c61e729922fa7899af7e72_pipeline_id",
+                "query": {
+                  "datasetName": "rows_processed_vs_dropped",
+                  "parameters": [
+                    {
+                      "name": "pipeline_id",
+                      "keyword": "pipeline_id"
+                    }
+                  ],
+                  "disaggregated": false
+                }
+              }
+            ],
+            "spec": {
+              "version": 2,
+              "frame": {
+                "showTitle": true,
+                "title": "PipelineId"
+              },
+              "widgetType": "filter-single-select",
+              "encodings": {
+                "fields": [
+                  {
+                    "parameterName": "pipeline_id",
+                    "queryName": "parameter_dashboards/01f13faffd311b83b94201af910b410a/datasets/01f13fbec2c61e729922fa7899af7e72_pipeline_id"
+                  }
+                ]
+              }
+            }
+          },
+          "position": {
+            "x": 0,
+            "y": 0,
+            "width": 12,
+            "height": 1
+          }
+        },
+        {
+          "widget": {
+            "name": "rows_processed_dropped_chart",
+            "queries": [
+              {
+                "name": "main_query",
+                "query": {
+                  "datasetName": "rows_processed_vs_dropped",
+                  "fields": [
+                    {
+                      "name": "table_name",
+                      "expression": "`table_name`"
+                    },
+                    {
+                      "name": "sum(rows_passed)",
+                      "expression": "SUM(`rows_passed`)"
+                    },
+                    {
+                      "name": "sum(rows_dropped)",
+                      "expression": "SUM(`rows_dropped`)"
+                    },
+                    {
+                      "name": "sum(drop_rate_pct)",
+                      "expression": "SUM(`drop_rate_pct`)"
+                    }
+                  ],
+                  "disaggregated": false
+                }
+              }
+            ],
+            "spec": {
+              "version": 1,
+              "mark": {
+                "colors": [
+                  {
+                    "themeColorType": "visualizationColors",
+                    "position": 2
+                  },
+                  {
+                    "themeColorType": "visualizationColors",
+                    "position": 1
+                  },
+                  {
+                    "themeColorType": "visualizationColors",
+                    "position": 3
+                  },
+                  {
+                    "themeColorType": "visualizationColors",
+                    "position": 4
+                  },
+                  {
+                    "themeColorType": "visualizationColors",
+                    "position": 5
+                  },
+                  {
+                    "themeColorType": "visualizationColors",
+                    "position": 6
+                  },
+                  {
+                    "themeColorType": "visualizationColors",
+                    "position": 7
+                  },
+                  {
+                    "themeColorType": "visualizationColors",
+                    "position": 8
+                  },
+                  {
+                    "themeColorType": "visualizationColors",
+                    "position": 9
+                  },
+                  {
+                    "themeColorType": "visualizationColors",
+                    "position": 10
+                  }
+                ]
+              },
+              "frame": {
+                "showTitle": true,
+                "title": "Rows Processed vs Dropped"
+              },
+              "widgetType": "combo",
+              "encodings": {
+                "x": {
+                  "fieldName": "table_name",
+                  "scale": {
+                    "type": "categorical"
+                  }
+                },
+                "y": {
+                  "primary": {
+                    "fields": [
+                      {
+                        "fieldName": "sum(rows_passed)"
+                      },
+                      {
+                        "fieldName": "sum(rows_dropped)"
+                      }
+                    ],
+                    "scale": {
+                      "type": "quantitative"
+                    }
+                  },
+                  "secondary": {
+                    "fields": [
+                      {
+                        "fieldName": "sum(drop_rate_pct)"
+                      }
+                    ],
+                    "scale": {
+                      "type": "quantitative"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "position": {
+            "x": 0,
+            "y": 1,
+            "width": 6,
+            "height": 7
+          }
+        },
+        {
+          "widget": {
+            "name": "top_failing_expectations_chart",
+            "queries": [
+              {
+                "name": "main_query",
+                "query": {
+                  "datasetName": "top_failing_expectations",
+                  "fields": [
+                    {
+                      "name": "sum(total_failures)",
+                      "expression": "SUM(`total_failures`)"
+                    },
+                    {
+                      "name": "expectation",
+                      "expression": "`expectation`"
+                    }
+                  ],
+                  "disaggregated": false
+                }
+              }
+            ],
+            "spec": {
+              "version": 3,
+              "frame": {
+                "showTitle": true,
+                "title": "Top Failing Expectations"
+              },
+              "widgetType": "pie",
+              "encodings": {
+                "angle": {
+                  "fieldName": "sum(total_failures)",
+                  "scale": {
+                    "type": "quantitative"
+                  }
+                },
+                "color": {
+                  "fieldName": "expectation",
+                  "scale": {
+                    "type": "categorical"
+                  }
+                }
+              }
+            }
+          },
+          "position": {
+            "x": 6,
+            "y": 1,
+            "width": 6,
+            "height": 7
+          }
+        },
+        {
+          "widget": {
+            "name": "drop_rate_trend_chart",
+            "queries": [
+              {
+                "name": "main_query",
+                "query": {
+                  "datasetName": "expectation_breakdown",
+                  "fields": [
+                    {
+                      "name": "expectation",
+                      "expression": "`expectation`"
+                    },
+                    {
+                      "name": "sum(passed_records)",
+                      "expression": "SUM(`passed_records`)"
+                    },
+                    {
+                      "name": "sum(failed_records)",
+                      "expression": "SUM(`failed_records`)"
+                    }
+                  ],
+                  "disaggregated": false
+                }
+              }
+            ],
+            "spec": {
+              "version": 3,
+              "frame": {
+                "showTitle": true,
+                "title": "Per Expectation Pass/Fail breakup"
+              },
+              "widgetType": "bar",
+              "encodings": {
+                "x": {
+                  "fieldName": "expectation",
+                  "scale": {
+                    "type": "categorical"
+                  }
+                },
+                "y": {
+                  "scale": {
+                    "type": "quantitative"
+                  },
+                  "fields": [
+                    {
+                      "fieldName": "sum(passed_records)"
+                    },
+                    {
+                      "fieldName": "sum(failed_records)"
+                    }
+                  ]
+                }
+              }
+            }
+          },
+          "position": {
+            "x": 0,
+            "y": 8,
+            "width": 12,
+            "height": 6
+          }
+        },
+        {
+          "widget": {
+            "name": "expectation_breakdown_table",
+            "queries": [
+              {
+                "name": "main_query",
+                "query": {
+                  "datasetName": "drop_rate_trend",
+                  "fields": [
+                    {
+                      "name": "table_name",
+                      "expression": "`table_name`"
+                    },
+                    {
+                      "name": "hourly(run_hour)",
+                      "expression": "DATE_TRUNC(\"HOUR\", `run_hour`)"
+                    },
+                    {
+                      "name": "sum(rows_dropped)",
+                      "expression": "SUM(`rows_dropped`)"
+                    }
+                  ],
+                  "disaggregated": false
+                }
+              }
+            ],
+            "spec": {
+              "version": 3,
+              "frame": {
+                "showTitle": true,
+                "title": "Drop Rate Trend Analysis Across Pipeline Runs"
+              },
+              "widgetType": "line",
+              "encodings": {
+                "x": {
+                  "fieldName": "hourly(run_hour)",
+                  "scale": {
+                    "type": "temporal"
+                  }
+                },
+                "y": {
+                  "fieldName": "sum(rows_dropped)",
+                  "scale": {
+                    "type": "quantitative"
+                  }
+                },
+                "color": {
+                  "fieldName": "table_name",
+                  "scale": {
+                    "type": "categorical"
+                  }
+                }
+              }
+            }
+          },
+          "position": {
+            "x": 0,
+            "y": 14,
+            "width": 12,
+            "height": 8
+          }
+        },
+        {
+          "widget": {
+            "name": "expectation_event_log_table",
+            "queries": [
+              {
+                "name": "main_query",
+                "query": {
+                  "datasetName": "expectation_event_log",
+                  "fields": [
+                    {
+                      "name": "timestamp",
+                      "expression": "`timestamp`"
+                    },
+                    {
+                      "name": "table_name",
+                      "expression": "`table_name`"
+                    },
+                    {
+                      "name": "expectation",
+                      "expression": "`expectation`"
+                    },
+                    {
+                      "name": "passed_records",
+                      "expression": "`passed_records`"
+                    },
+                    {
+                      "name": "failed_records",
+                      "expression": "`failed_records`"
+                    }
+                  ],
+                  "disaggregated": true
+                }
+              }
+            ],
+            "spec": {
+              "version": 2,
+              "frame": {
+                "showTitle": true,
+                "title": "Expectation event log"
+              },
+              "widgetType": "table",
+              "encodings": {
+                "columns": [
+                  {
+                    "fieldName": "timestamp",
+                    "displayName": "Timestamp"
+                  },
+                  {
+                    "fieldName": "table_name",
+                    "displayName": "Table"
+                  },
+                  {
+                    "fieldName": "expectation",
+                    "displayName": "Expectation"
+                  },
+                  {
+                    "fieldName": "passed_records",
+                    "displayName": "Passed"
+                  },
+                  {
+                    "fieldName": "failed_records",
+                    "displayName": "Failed"
+                  }
+                ]
+              }
+            }
+          },
+          "position": {
+            "x": 0,
+            "y": 22,
+            "width": 12,
+            "height": 8
+          }
+        }
+      ],
+      "pageType": "PAGE_TYPE_CANVAS",
+      "layoutVersion": "GRID_V1"
+    }
+  ],
+  "uiSettings": {
+    "theme": {
+      "widgetHeaderAlignment": "ALIGNMENT_UNSPECIFIED"
+    },
+    "applyModeEnabled": false
+  }
+}

@@ -247,5 +247,5 @@ LEFT JOIN clicks_slim c
 -- MAGIC
 -- MAGIC Next steps:
 -- MAGIC - **Step 3 — Governance:** open `06_governance.sql` to apply RBAC, column masking and row-level security
--- MAGIC - **Step 4 — Exploration:** open `07_genie_setup.sql` to configure a Genie AI/BI space over these tables
+-- MAGIC - **Step 4 — Exploration:** open `08_genie_setup.sql` to configure a Genie AI/BI space over these tables
 -- MAGIC - **Step 5 — Insights:** open `08_insights_dashboard.sql` for the final analytics dashboard

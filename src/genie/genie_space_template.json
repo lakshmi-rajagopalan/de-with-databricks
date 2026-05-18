@@ -1,0 +1,49 @@
+{
+  "version": 2,
+  "data_sources": {
+    "tables": [
+      {
+        "identifier": "workspace.de.silver_impression_events"
+      },
+      {
+        "identifier": "workspace.de.silver_click_events"
+      },
+      {
+        "identifier": "workspace.de.silver_job_openings"
+      },
+      {
+        "identifier": "workspace.de.silver_clients"
+      },
+      {
+        "identifier": "workspace.de.silver_freelancers"
+      },
+      {
+        "identifier": "workspace.de.gold_job_performance"
+      },
+      {
+        "identifier": "workspace.de.gold_position_ctr"
+      },
+      {
+        "identifier": "workspace.de.gold_category_performance"
+      },
+      {
+        "identifier": "workspace.de.gold_daily_metrics"
+      },
+      {
+        "identifier": "workspace.de.gold_search_query_performance"
+      },
+      {
+        "identifier": "workspace.de.gold_sublocation_performance"
+      },
+      {
+        "identifier": "workspace.de.mv_search_funnel"
+      },
+      {
+        "identifier": "workspace.de.mv_position_bias"
+      },
+      {
+        "identifier": "workspace.de.mv_category_performance"
+      }
+    ]
+  }
+}
