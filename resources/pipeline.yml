@@ -3,17 +3,17 @@ resources:
     clickstream_workshop:
       name: clickstream-workshop
       catalog: ${var.catalog_name}
-      target: ${var.schema_name}
+      target: ${resources.schemas.workshop.name}
       channel: CURRENT
       serverless: true
       configuration:
-        raw_data_path: ${var.raw_data_path}
+        raw_data_path: /Volumes/${var.catalog_name}/${resources.schemas.workshop.name}/${resources.volumes.raw.name}
       libraries:
         - notebook:
-            path: ../src/dlt/01_bronze.py
+            path: ../src/dlt/bronze.py
         - notebook:
-            path: ../src/dlt/02_silver.py
+            path: ../src/dlt/silver.py
         - notebook:
-            path: ../src/dlt/03_gold.py
+            path: ../src/dlt/gold.py
         - notebook:
-            path: ../src/dlt/04_star_schema.py
+            path: ../src/dlt/star_schema.py

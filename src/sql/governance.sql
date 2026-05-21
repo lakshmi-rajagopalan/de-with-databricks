@@ -4,8 +4,8 @@
 -- MAGIC %md
 -- MAGIC # Data Governance — Unity Catalog RBAC
 -- MAGIC
--- MAGIC **Step 3 of the workshop.** Demonstrates Unity Catalog governance features applied
--- MAGIC to the clickstream tables built in earlier steps.
+-- MAGIC **Module 9 of the workshop.** Demonstrates Unity Catalog governance features applied
+-- MAGIC to the full analytics surface — tables, semantic views, dashboards, and Genie space — built in Modules 1–8.
 -- MAGIC
 -- MAGIC | Feature | What it demonstrates |
 -- MAGIC |---------|---------------------|
@@ -15,9 +15,17 @@
 -- MAGIC | Row-level security | Clients can only see their own job data |
 -- MAGIC | Lineage | Audit who queried what via system tables |
 -- MAGIC
+-- MAGIC **Workshop use cases driving each exercise below:**
+-- MAGIC
+-- MAGIC 1. Govern the raw landing zone in `workspace.clickstream_workshop.raw` and the populated silver/gold tables.
+-- MAGIC 2. Separate engineer access to silver tables from analyst access to gold tables.
+-- MAGIC 3. Mask behavioral identifiers such as `visitor_id` for broader audiences.
+-- MAGIC 4. Apply row filters so client-facing consumers only see their own jobs or portfolios.
+-- MAGIC 5. Tag sensitive clickstream assets and trace downstream lineage into dashboards and Genie.
+-- MAGIC
 -- MAGIC **Prerequisites:** the DLT pipeline must have run at least once so that the tables
--- MAGIC `workspace.de.silver_click_events`, `workspace.de.fact_search_events`, and
--- MAGIC `workspace.de.dim_job` exist.
+-- MAGIC `workspace.clickstream_workshop.silver_click_events`, `workspace.clickstream_workshop.fact_search_events`, and
+-- MAGIC `workspace.clickstream_workshop.dim_job` exist.
 
 -- COMMAND ----------
 -- MAGIC %md
@@ -32,22 +40,22 @@
 -- COMMAND ----------
 
 -- Mark silver_click_events as containing PII (visitor_id is a user identifier)
-ALTER TABLE workspace.de.silver_click_events
+ALTER TABLE workspace.clickstream_workshop.silver_click_events
   SET TAGS ('pii' = 'true', 'sensitivity' = 'high', 'domain' = 'search');
 
 -- COMMAND ----------
 
 -- Mark fact_search_events as a gold/star-schema table for discoverability
-ALTER TABLE workspace.de.fact_search_events
+ALTER TABLE workspace.clickstream_workshop.fact_search_events
   SET TAGS ('pii' = 'true', 'sensitivity' = 'high', 'layer' = 'gold', 'domain' = 'search');
 
 -- COMMAND ----------
 
 -- Non-PII gold tables — low sensitivity, analytics-ready
-ALTER TABLE workspace.de.gold_job_performance
+ALTER TABLE workspace.clickstream_workshop.gold_job_performance
   SET TAGS ('sensitivity' = 'low', 'layer' = 'gold');
 
-ALTER TABLE workspace.de.dim_job
+ALTER TABLE workspace.clickstream_workshop.dim_job
   SET TAGS ('sensitivity' = 'low', 'layer' = 'gold');
 
 -- COMMAND ----------
@@ -66,22 +74,22 @@ ALTER TABLE workspace.de.dim_job
 -- COMMAND ----------
 
 -- Analysts can use the schema and read all gold / star-schema tables
-GRANT USE SCHEMA ON SCHEMA workspace.de TO `analyst`;
+GRANT USE SCHEMA ON SCHEMA workspace.clickstream_workshop TO `analyst`;
 
-GRANT SELECT ON TABLE workspace.de.fact_search_events    TO `analyst`;
-GRANT SELECT ON TABLE workspace.de.dim_job               TO `analyst`;
-GRANT SELECT ON TABLE workspace.de.dim_client            TO `analyst`;
-GRANT SELECT ON TABLE workspace.de.dim_category          TO `analyst`;
-GRANT SELECT ON TABLE workspace.de.dim_date              TO `analyst`;
-GRANT SELECT ON TABLE workspace.de.gold_job_performance  TO `analyst`;
-GRANT SELECT ON TABLE workspace.de.gold_position_ctr     TO `analyst`;
-GRANT SELECT ON TABLE workspace.de.gold_category_performance TO `analyst`;
-GRANT SELECT ON TABLE workspace.de.gold_daily_metrics    TO `analyst`;
+GRANT SELECT ON TABLE workspace.clickstream_workshop.fact_search_events    TO `analyst`;
+GRANT SELECT ON TABLE workspace.clickstream_workshop.dim_job               TO `analyst`;
+GRANT SELECT ON TABLE workspace.clickstream_workshop.dim_client            TO `analyst`;
+GRANT SELECT ON TABLE workspace.clickstream_workshop.dim_category          TO `analyst`;
+GRANT SELECT ON TABLE workspace.clickstream_workshop.dim_date              TO `analyst`;
+GRANT SELECT ON TABLE workspace.clickstream_workshop.gold_job_performance  TO `analyst`;
+GRANT SELECT ON TABLE workspace.clickstream_workshop.gold_position_ctr     TO `analyst`;
+GRANT SELECT ON TABLE workspace.clickstream_workshop.gold_category_performance TO `analyst`;
+GRANT SELECT ON TABLE workspace.clickstream_workshop.gold_daily_metrics    TO `analyst`;
 
 -- COMMAND ----------
 
 -- Data engineers get full access to all layers (including raw PII in silver)
-GRANT ALL PRIVILEGES ON SCHEMA workspace.de TO `data_engineer`;
+GRANT ALL PRIVILEGES ON SCHEMA workspace.clickstream_workshop TO `data_engineer`;
 
 -- COMMAND ----------
 -- MAGIC %md
@@ -98,28 +106,28 @@ GRANT ALL PRIVILEGES ON SCHEMA workspace.de TO `data_engineer`;
 -- COMMAND ----------
 
 -- Create the masking function
-CREATE OR REPLACE FUNCTION workspace.de.mask_visitor_id(visitor_id STRING)
+CREATE OR REPLACE FUNCTION workspace.clickstream_workshop.mask_visitor_id(visitor_id STRING)
   RETURN IF(IS_MEMBER('data_engineer'), visitor_id, SHA2(visitor_id, 256));
 
 -- COMMAND ----------
 
 -- Apply the mask to silver_click_events
-ALTER TABLE workspace.de.silver_click_events
+ALTER TABLE workspace.clickstream_workshop.silver_click_events
   ALTER COLUMN visitor_id
-  SET MASK workspace.de.mask_visitor_id;
+  SET MASK workspace.clickstream_workshop.mask_visitor_id;
 
 -- COMMAND ----------
 
 -- Apply the same mask to fact_search_events
-ALTER TABLE workspace.de.fact_search_events
+ALTER TABLE workspace.clickstream_workshop.fact_search_events
   ALTER COLUMN visitor_id
-  SET MASK workspace.de.mask_visitor_id;
+  SET MASK workspace.clickstream_workshop.mask_visitor_id;
 
 -- COMMAND ----------
 
 -- Verify: run this as an analyst — you should see hashed values
 -- Run this as a data_engineer — you should see the real visitor_id
-SELECT visitor_id FROM workspace.de.silver_click_events LIMIT 5;
+SELECT visitor_id FROM workspace.clickstream_workshop.silver_click_events LIMIT 5;
 
 -- COMMAND ----------
 -- MAGIC %md
@@ -138,19 +146,19 @@ SELECT visitor_id FROM workspace.de.silver_click_events LIMIT 5;
 -- COMMAND ----------
 
 -- Create the row filter function
-CREATE OR REPLACE FUNCTION workspace.de.client_row_filter(client_uid STRING)
+CREATE OR REPLACE FUNCTION workspace.clickstream_workshop.client_row_filter(client_uid STRING)
   RETURN IS_MEMBER('data_engineer') OR client_uid = CURRENT_USER();
 
 -- COMMAND ----------
 
 -- Apply row filter to dim_job
-ALTER TABLE workspace.de.dim_job
-  SET ROW FILTER workspace.de.client_row_filter ON (client_uid);
+ALTER TABLE workspace.clickstream_workshop.dim_job
+  SET ROW FILTER workspace.clickstream_workshop.client_row_filter ON (client_uid);
 
 -- COMMAND ----------
 
 -- Verify row filter is in place — a non-engineer user should only see their own rows
-DESCRIBE EXTENDED workspace.de.dim_job;
+DESCRIBE EXTENDED workspace.clickstream_workshop.dim_job;
 
 -- COMMAND ----------
 -- MAGIC %md
@@ -175,7 +183,7 @@ SELECT
     request_params.table_full_name AS table_name
 FROM system.access.audit
 WHERE action_name IN ('SELECT', 'CREATE TABLE', 'ALTER TABLE', 'GRANT')
-  AND request_params.table_full_name LIKE 'workspace.de.%'
+  AND request_params.table_full_name LIKE 'workspace.clickstream_workshop.%'
 ORDER BY event_time DESC
 LIMIT 50;
 
@@ -188,5 +196,5 @@ SELECT
     target_table_full_name,
     target_column_name
 FROM system.lineage.column_lineage
-WHERE target_table_full_name = 'workspace.de.fact_search_events'
+WHERE target_table_full_name = 'workspace.clickstream_workshop.fact_search_events'
 ORDER BY target_column_name;

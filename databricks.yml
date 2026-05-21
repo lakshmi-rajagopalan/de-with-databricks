@@ -4,35 +4,27 @@ bundle:
 include:
   - resources/*.yml
 
-sync:
-  exclude:
-    - src/dlt/04_star_schema.sql
-
 variables:
   catalog_name:
-    description: Unity Catalog catalog for the DLT pipeline.
+    description: Unity Catalog catalog for the DLT pipeline (uses workspace default catalog).
     default: workspace
   schema_name:
-    description: Unity Catalog schema used as DLT target.
-    default: de
-  raw_data_path:
-    description: Volume path where raw CSV files are uploaded.
-    default: /Volumes/workspace/de/raw
+    description: Unity Catalog schema used as DLT target (created by the bundle).
+    default: clickstream_workshop
   warehouse_id:
     description: SQL warehouse ID used by Lakeview dashboards.
   client_dashboard_url:
     description: Published URL for the Client Demand Intelligence dashboard.
-    default: ""
+    default: "N/A"
   insights_dashboard_url:
     description: Published URL for the Clickstream Insights dashboard.
-    default: ""
+    default: "N/A"
   genie_space_url:
     description: URL for the Genie space used by the app shell.
-    default: ""
+    default: "N/A"
 
 targets:
   dev:
     default: true
-    mode: development
     workspace:
       root_path: /Workspace/Users/${workspace.current_user.userName}/.bundle/${bundle.name}/${bundle.target}

@@ -1,54 +1,15 @@
 -- Databricks notebook source
 
 -- COMMAND ----------
-CREATE SCHEMA IF NOT EXISTS workspace.de;
+-- MAGIC %md
+-- MAGIC # Module 4 — Report Views
+-- MAGIC
+-- MAGIC Plain SQL views with business-logic CASE expressions and nested aggregations
+-- MAGIC that can't be expressed in the metric view semantic model.
+-- MAGIC `client_portfolio_summary` has been promoted to `mv_client_portfolio` in `metric_views.sql`.
 
 -- COMMAND ----------
-CREATE OR REPLACE VIEW workspace.de.mv_search_funnel AS
-SELECT event_date, impressions, clicks, ctr_pct
-FROM workspace.de.gold_daily_metrics;
-
--- COMMAND ----------
-CREATE OR REPLACE VIEW workspace.de.mv_position_bias AS
-SELECT position, impressions, clicks, ctr_pct, avg_time_to_click_secs
-FROM workspace.de.gold_position_ctr;
-
--- COMMAND ----------
-CREATE OR REPLACE VIEW workspace.de.mv_category_performance AS
-SELECT category, impressions, clicks, ctr_pct, avg_budget_amount
-FROM workspace.de.gold_category_performance;
-
--- COMMAND ----------
-CREATE OR REPLACE VIEW workspace.de.mv_client_portfolio_summary AS
-SELECT
-	job_summary.client_uid,
-	COALESCE(client_profiles.company_name, job_summary.client_uid) AS company_name,
-	job_summary.jobs_posted,
-	job_summary.active_jobs,
-	job_summary.total_impressions,
-	job_summary.total_clicks,
-	ROUND(job_summary.total_clicks / NULLIF(job_summary.total_impressions, 0) * 100, 2) AS ctr_pct,
-	ROUND(job_summary.avg_budget_amount, 2) AS avg_budget_amount,
-	job_summary.unique_categories
-FROM (
-	SELECT
-		job_openings.client_uid,
-		COUNT(DISTINCT job_openings.opening_uid) AS jobs_posted,
-		SUM(CASE WHEN job_openings.is_active THEN 1 ELSE 0 END) AS active_jobs,
-		SUM(COALESCE(job_performance.impressions, 0)) AS total_impressions,
-		SUM(COALESCE(job_performance.clicks, 0)) AS total_clicks,
-		AVG(job_openings.budget_amount) AS avg_budget_amount,
-		COUNT(DISTINCT job_openings.category) AS unique_categories
-	FROM workspace.de.silver_job_openings AS job_openings
-	LEFT JOIN workspace.de.gold_job_performance AS job_performance
-		USING (opening_uid)
-	GROUP BY job_openings.client_uid
-) AS job_summary
-LEFT JOIN workspace.de.silver_clients AS client_profiles
-	USING (client_uid);
-
--- COMMAND ----------
-CREATE OR REPLACE VIEW workspace.de.mv_client_posting_performance AS
+CREATE OR REPLACE VIEW workspace.clickstream_workshop.client_posting_performance AS
 SELECT
 	job_openings.client_uid,
 	COALESCE(client_profiles.company_name, job_openings.client_uid) AS company_name,
@@ -75,14 +36,14 @@ SELECT
 		WHEN job_openings.is_active AND COALESCE(job_performance.clicks, 0) = 0 THEN 'Review budget and targeting'
 		ELSE 'Maintain current strategy'
 	END AS recommended_action
-FROM workspace.de.silver_job_openings AS job_openings
-LEFT JOIN workspace.de.gold_job_performance AS job_performance
+FROM workspace.clickstream_workshop.silver_job_openings AS job_openings
+LEFT JOIN workspace.clickstream_workshop.gold_job_performance AS job_performance
 	USING (opening_uid)
-LEFT JOIN workspace.de.silver_clients AS client_profiles
+LEFT JOIN workspace.clickstream_workshop.silver_clients AS client_profiles
 	USING (client_uid);
 
 -- COMMAND ----------
-CREATE OR REPLACE VIEW workspace.de.mv_client_category_benchmark AS
+CREATE OR REPLACE VIEW workspace.clickstream_workshop.client_category_benchmark AS
 SELECT
 	client_category.client_uid,
 	COALESCE(client_profiles.company_name, client_category.client_uid) AS company_name,
@@ -109,18 +70,18 @@ FROM (
 		SUM(COALESCE(job_performance.clicks, 0)) AS client_clicks,
 		SUM(COALESCE(job_performance.clicks, 0)) / NULLIF(SUM(COALESCE(job_performance.impressions, 0)), 0) * 100 AS client_ctr_pct,
 		AVG(job_openings.budget_amount) AS client_avg_budget_amount
-	FROM workspace.de.silver_job_openings AS job_openings
-	LEFT JOIN workspace.de.gold_job_performance AS job_performance
+	FROM workspace.clickstream_workshop.silver_job_openings AS job_openings
+	LEFT JOIN workspace.clickstream_workshop.gold_job_performance AS job_performance
 		USING (opening_uid)
 	GROUP BY job_openings.client_uid, job_openings.category
 ) AS client_category
-LEFT JOIN workspace.de.gold_category_performance AS marketplace_category
+LEFT JOIN workspace.clickstream_workshop.gold_category_performance AS marketplace_category
 	ON client_category.category = marketplace_category.category
-LEFT JOIN workspace.de.silver_clients AS client_profiles
+LEFT JOIN workspace.clickstream_workshop.silver_clients AS client_profiles
 	ON client_category.client_uid = client_profiles.client_uid;
 
 -- COMMAND ----------
-CREATE OR REPLACE VIEW workspace.de.mv_client_opportunities AS
+CREATE OR REPLACE VIEW workspace.clickstream_workshop.client_opportunities AS
 SELECT
 	posting.client_uid,
 	posting.company_name,
@@ -141,8 +102,8 @@ SELECT
 		ELSE 'Monitor'
 	END AS opportunity_type,
 	posting.recommended_action
-FROM workspace.de.mv_client_posting_performance AS posting
-LEFT JOIN workspace.de.mv_client_category_benchmark AS benchmark
+FROM workspace.clickstream_workshop.client_posting_performance AS posting
+LEFT JOIN workspace.clickstream_workshop.client_category_benchmark AS benchmark
 	ON posting.client_uid = benchmark.client_uid
  AND posting.category = benchmark.category
 WHERE posting.is_active

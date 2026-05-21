@@ -17,14 +17,14 @@
 # MAGIC | `gold_daily_metrics` | What does the day-by-day search funnel look like? |
 # MAGIC
 # MAGIC **DLT concepts covered:**
-# MAGIC - `dlt.read()` to join across silver tables in the same pipeline
+# MAGIC - `dp.read()` to join across silver tables in the same pipeline
 # MAGIC - CTR funnel (impressions → clicks)
 # MAGIC - Window functions for ranking within groups
 # MAGIC - Derived KPIs: CTR, avg time-to-click, impression-to-click latency
 
 # COMMAND ----------
 
-import dlt
+from pyspark import pipelines as dp
 from pyspark.sql.functions import (
     col, count, countDistinct, sum as _sum, avg, round as _round,
     when, date_trunc, min as _min, max as _max, first,
@@ -42,16 +42,16 @@ from pyspark.sql.functions import (
 
 # COMMAND ----------
 
-@dlt.table(
+@dp.table(
     name="gold_job_performance",
     comment="Per-job funnel: impressions, clicks, CTR and average position",
     table_properties={"quality": "gold"},
 )
-@dlt.expect("clicks_le_impressions", "clicks <= impressions OR clicks IS NULL")
+@dp.expect("clicks_le_impressions", "clicks <= impressions OR clicks IS NULL")
 def gold_job_performance():
-    jobs        = dlt.read("silver_job_openings")
-    impressions = dlt.read("silver_impression_events")
-    clicks      = dlt.read("silver_click_events")
+    jobs        = dp.read("silver_job_openings")
+    impressions = dp.read("silver_impression_events")
+    clicks      = dp.read("silver_click_events")
 
     imp_agg = (
         impressions
@@ -111,30 +111,24 @@ def gold_job_performance():
 
 # COMMAND ----------
 
-@dlt.table(
+@dp.table(
     name="gold_search_query_performance",
     comment="Per-query funnel: impressions, clicks and CTR for each search term",
     table_properties={"quality": "gold"},
 )
 def gold_search_query_performance():
-    impressions = dlt.read("silver_impression_events")
-    clicks      = dlt.read("silver_click_events")
+    impressions = dp.read("silver_impression_events")
+    searches    = dp.read("silver_search_events")
+    clicks      = dp.read("silver_click_events")
 
-    # Bring search_query onto clicks via search_guid
-    imp_with_query = impressions.select("search_guid", "search_query", "opening_uid").distinct()
-
-    clicks_with_query = (
-        clicks
-        .filter(col("opening_uid").isNotNull())
-        .join(
-            imp_with_query.select("search_guid", "search_query").distinct(),
-            "search_guid",
-            "left",
-        )
+    # Enrich impressions with search_query from silver_search_events
+    imp_with_query = (
+        impressions
+        .join(searches.select("search_guid", "search_query"), "search_guid", "left")
     )
 
     imp_agg = (
-        impressions
+        imp_with_query
         .groupBy("search_query")
         .agg(
             count("event_id").alias("impressions"),
@@ -145,7 +139,9 @@ def gold_search_query_performance():
     )
 
     clk_agg = (
-        clicks_with_query
+        clicks
+        .filter(col("opening_uid").isNotNull())
+        .join(searches.select("search_guid", "search_query").distinct(), "search_guid", "left")
         .groupBy("search_query")
         .agg(count("event_id").alias("clicks"))
     )
@@ -169,14 +165,14 @@ def gold_search_query_performance():
 
 # COMMAND ----------
 
-@dlt.table(
+@dp.table(
     name="gold_position_ctr",
     comment="CTR by search result position — used to analyse and correct for position bias",
     table_properties={"quality": "gold"},
 )
 def gold_position_ctr():
-    impressions = dlt.read("silver_impression_events")
-    clicks      = dlt.read("silver_click_events")
+    impressions = dp.read("silver_impression_events")
+    clicks      = dp.read("silver_click_events")
 
     imp_pos = (
         impressions
@@ -210,15 +206,15 @@ def gold_position_ctr():
 
 # COMMAND ----------
 
-@dlt.table(
+@dp.table(
     name="gold_category_performance",
     comment="Job category rollup: job count, impressions, clicks, CTR and average budget",
     table_properties={"quality": "gold"},
 )
 def gold_category_performance():
-    jobs        = dlt.read("silver_job_openings")
-    impressions = dlt.read("silver_impression_events")
-    clicks      = dlt.read("silver_click_events")
+    jobs        = dp.read("silver_job_openings")
+    impressions = dp.read("silver_impression_events")
+    clicks      = dp.read("silver_click_events")
 
     # Attach category to impressions via opening_uid
     imp_with_cat = impressions.join(jobs.select("opening_uid", "category"), "opening_uid", "left")
@@ -270,35 +266,35 @@ def gold_category_performance():
 
 # COMMAND ----------
 
-@dlt.table(
+@dp.table(
     name="gold_sublocation_performance",
     comment="Sublocation comparison: search_results vs featured_jobs CTR and engagement",
     table_properties={"quality": "gold"},
 )
 def gold_sublocation_performance():
-    impressions = dlt.read("silver_impression_events")
-    clicks      = dlt.read("silver_click_events")
+    impressions = dp.read("silver_impression_events")
+    searches    = dp.read("silver_search_events")
+    clicks      = dp.read("silver_click_events")
 
-    # Annotate clicks with the sublocation from the matching impression row
-    imp_lookup = (
+    # Enrich impressions with sublocation from silver_search_events
+    imp_with_sub = (
         impressions
-        .select("event_id", "opening_uid", "visitor_id", "search_guid", "sublocation")
-        .withColumnRenamed("event_id", "imp_event_id")
+        .join(searches.select("search_guid", "sublocation"), "search_guid", "left")
     )
 
-    # Match clicks to impressions via visitor + opening
+    # Annotate clicks with sublocation via search_guid
     clk_annotated = (
         clicks
         .filter(col("opening_uid").isNotNull())
         .join(
-            impressions.select("visitor_id", "opening_uid", "sublocation", "search_guid").distinct(),
-            ["visitor_id", "opening_uid", "search_guid"],
+            searches.select("search_guid", "sublocation").distinct(),
+            "search_guid",
             "left",
         )
     )
 
     imp_agg = (
-        impressions
+        imp_with_sub
         .groupBy("sublocation")
         .agg(
             count("event_id").alias("impressions"),
@@ -333,18 +329,20 @@ def gold_sublocation_performance():
 
 # COMMAND ----------
 
-@dlt.table(
+@dp.table(
     name="gold_daily_metrics",
     comment="Daily search funnel trend: impressions, clicks, CTR and unique visitor counts",
     table_properties={"quality": "gold"},
 )
-@dlt.expect("positive_ctr", "ctr_pct IS NULL OR (ctr_pct >= 0 AND ctr_pct <= 100)")
+@dp.expect("positive_ctr", "ctr_pct IS NULL OR (ctr_pct >= 0 AND ctr_pct <= 100)")
 def gold_daily_metrics():
-    impressions = dlt.read("silver_impression_events")
-    clicks      = dlt.read("silver_click_events")
+    impressions = dp.read("silver_impression_events")
+    searches    = dp.read("silver_search_events")
+    clicks      = dp.read("silver_click_events")
 
     imp_daily = (
         impressions
+        .join(searches.select("search_guid", "event_ts"), "search_guid", "left")
         .withColumn("event_date", date_trunc("day", col("event_ts")).cast("date"))
         .groupBy("event_date")
         .agg(

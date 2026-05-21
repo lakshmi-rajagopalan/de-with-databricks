@@ -10,10 +10,10 @@
 # MAGIC ## Schema diagram
 # MAGIC
 # MAGIC ```
-# MAGIC  dim_freelancer           dim_date
-# MAGIC  visitor_id                  │
-# MAGIC       │                   event_date
-# MAGIC       │                      │
+# MAGIC  dim_freelancer   dim_date   dim_search
+# MAGIC  visitor_id          │       search_guid
+# MAGIC       │           event_date      │
+# MAGIC       │               │           │
 # MAGIC  dim_client ─── dim_job ─── fact_search_events ─── dim_category
 # MAGIC  client_uid    opening_uid   (one row per impression)
 # MAGIC ```
@@ -25,17 +25,18 @@
 # MAGIC | `dim_freelancer` | One row per freelancer (from freelancers.csv) | Dimension |
 # MAGIC | `dim_category` | One row per job category | Dimension |
 # MAGIC | `dim_date` | One row per calendar date | Date dimension |
+# MAGIC | `dim_search` | One row per search session | Dimension |
 # MAGIC | `fact_search_events` | One row per impression event | Fact |
 # MAGIC
 # MAGIC **DLT concepts covered:**
-# MAGIC - `dlt.read()` to reference silver tables within the pipeline
+# MAGIC - `dp.read()` to reference silver tables within the pipeline
 # MAGIC - Deriving a date spine from event data (no external seed needed)
 # MAGIC - LEFT JOIN to enrich the fact table with click outcome in a single pass
 # MAGIC - Enriching dimensions by joining multiple silver sources
 
 # COMMAND ----------
 
-import dlt
+from pyspark import pipelines as dp
 from pyspark.sql.functions import (
     col, count, countDistinct, avg, round as _round,
     min as _min, max as _max,
@@ -53,14 +54,14 @@ from pyspark.sql.types import BooleanType
 
 # COMMAND ----------
 
-@dlt.table(
+@dp.table(
     name="dim_job",
     comment="Job dimension — one row per opening with all descriptive attributes",
     table_properties={"quality": "gold"},
 )
 def dim_job():
     return (
-        dlt.read("silver_job_openings")
+        dp.read("silver_job_openings")
         .select(
             col("opening_uid"),
             col("title"),
@@ -77,23 +78,26 @@ def dim_job():
 # MAGIC %md
 # MAGIC ## dim_client
 # MAGIC
-# MAGIC One row per client. Enriched by joining the client profile data (company name,
-# MAGIC country, industry, spend) from `silver_clients` onto the posting activity
-# MAGIC derived from `silver_job_openings`.
+# MAGIC One row per client. Sourced from `silver_clients` (the authoritative client list)
+# MAGIC and enriched with posting activity (job count, first/last post date) derived from
+# MAGIC `silver_job_openings` via a LEFT JOIN.
 # MAGIC
-# MAGIC Clients that appear in job postings but not in `clients.csv` still appear here
-# MAGIC via the LEFT JOIN — their profile attributes will be null.
+# MAGIC Clients with no postings still appear here; their activity columns will be null.
 
 # COMMAND ----------
 
-@dlt.table(
+@dp.table(
     name="dim_client",
     comment="Client dimension — job posting activity enriched with company profile",
     table_properties={"quality": "gold"},
 )
 def dim_client():
+    profile = dp.read("silver_clients").select(
+        "client_uid", "company_name", "country", "industry",
+        "payment_verified", "total_spend_usd", "avg_rating",
+    )
     activity = (
-        dlt.read("silver_job_openings")
+        dp.read("silver_job_openings")
         .groupBy("client_uid")
         .agg(
             count("opening_uid").alias("jobs_posted"),
@@ -101,11 +105,7 @@ def dim_client():
             _max("posted_at").alias("latest_posted_at"),
         )
     )
-    profile = dlt.read("silver_clients").select(
-        "client_uid", "company_name", "country", "industry",
-        "payment_verified", "total_spend_usd", "avg_rating",
-    )
-    return activity.join(profile, "client_uid", "left")
+    return profile.join(activity, "client_uid", "left")
 
 # COMMAND ----------
 # MAGIC %md
@@ -117,14 +117,14 @@ def dim_client():
 
 # COMMAND ----------
 
-@dlt.table(
+@dp.table(
     name="dim_category",
     comment="Category dimension — one row per category with job count and average budget",
     table_properties={"quality": "gold"},
 )
 def dim_category():
     return (
-        dlt.read("silver_job_openings")
+        dp.read("silver_job_openings")
         .groupBy("category")
         .agg(
             count("opening_uid").alias("total_jobs"),
@@ -146,14 +146,14 @@ def dim_category():
 
 # COMMAND ----------
 
-@dlt.table(
+@dp.table(
     name="dim_freelancer",
     comment="Freelancer dimension — profile attributes linked to clickstream via visitor_id",
     table_properties={"quality": "gold"},
 )
 def dim_freelancer():
     return (
-        dlt.read("silver_freelancers")
+        dp.read("silver_freelancers")
         .select(
             col("visitor_id"),
             col("name"),
@@ -188,14 +188,14 @@ def dim_freelancer():
 
 # COMMAND ----------
 
-@dlt.table(
+@dp.table(
     name="dim_date",
     comment="Date dimension — one row per calendar date seen in the event data",
     table_properties={"quality": "gold"},
 )
 def dim_date():
     dates = (
-        dlt.read("silver_impression_events")
+        dp.read("silver_search_events")
         .select(to_date(col("event_ts")).alias("date_key"))
         .distinct()
     )
@@ -209,6 +209,35 @@ def dim_date():
         .withColumn("week_of_year", weekofyear(col("date_key")))
         .withColumn("is_weekend",   dayofweek(col("date_key")).isin(1, 7))
         .orderBy("date_key")
+    )
+
+# COMMAND ----------
+# MAGIC %md
+# MAGIC ## dim_search
+# MAGIC
+# MAGIC One row per search session. Carries the full query context — the search term,
+# MAGIC sublocation, sort order, and page — that drove the set of impressions with the
+# MAGIC same `search_guid`.
+
+# COMMAND ----------
+
+@dp.table(
+    name="dim_search",
+    comment="Search session dimension — one row per search with query context",
+    table_properties={"quality": "gold"},
+)
+def dim_search():
+    return (
+        dp.read("silver_search_events")
+        .select(
+            col("search_guid"),
+            col("visitor_id"),
+            col("search_query"),
+            col("sublocation"),
+            col("sort"),
+            col("page"),
+            col("event_ts"),
+        )
     )
 
 # COMMAND ----------
@@ -230,14 +259,15 @@ def dim_date():
 
 # COMMAND ----------
 
-@dlt.table(
+@dp.table(
     name="fact_search_events",
     comment="Search event fact table — one row per impression with click outcome attached",
     table_properties={"quality": "gold"},
 )
 def fact_search_events():
-    impressions = dlt.read("silver_impression_events")
-    clicks      = dlt.read("silver_click_events")
+    impressions = dp.read("silver_impression_events")
+    clicks      = dp.read("silver_click_events")
+    searches    = dp.read("silver_search_events")
 
     # Select only the click columns we need to avoid column-name collisions after join
     clicks_slim = (
@@ -254,6 +284,7 @@ def fact_search_events():
 
     return (
         impressions
+        .join(searches, "search_guid", "left")
         .join(
             clicks_slim,
             (impressions.visitor_id  == clicks_slim.clk_visitor_id)
@@ -263,14 +294,15 @@ def fact_search_events():
         )
         .select(
             impressions.event_id,
-            to_date(impressions.event_ts).alias("event_date"),
+            to_date(searches.event_ts).alias("event_date"),
             impressions.opening_uid,
             impressions.visitor_id,
             impressions.search_guid,
-            impressions.search_query,
+            searches.search_query,
             impressions.position,
-            impressions.sublocation,
-            impressions.event_ts,
+            searches.sublocation,
+            searches.event_ts,
+            impressions.collector_ts,
             when(col("clk_visitor_id").isNotNull(), True).otherwise(False).alias("was_clicked"),
             col("time_to_click_secs"),
         )
@@ -279,9 +311,4 @@ def fact_search_events():
 # COMMAND ----------
 # MAGIC %md
 # MAGIC ---
-# MAGIC **Star schema complete.** Five tables are ready: four dimensions and one fact table.
-# MAGIC
-# MAGIC Next steps:
-# MAGIC - **Step 3 — Governance:** open `06_governance.sql` to apply RBAC, column masking and row-level security
-# MAGIC - **Step 4 — Exploration:** open `08_genie_setup.sql` to configure a Genie AI/BI space over these tables
-# MAGIC - **Step 5 — Insights:** open `08_insights_dashboard.sql` for the final analytics dashboard
+# MAGIC **Star schema complete.** Seven tables are ready: six dimensions and one fact table.

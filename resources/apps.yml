@@ -31,3 +31,5 @@ resources:
             value: ${var.genie_space_url}
           - name: WAREHOUSE_LABEL
             value: Serverless Starter Warehouse
+          - name: WAREHOUSE_ID
+            value: ${var.warehouse_id}

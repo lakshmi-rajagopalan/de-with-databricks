@@ -1,0 +1,14 @@
+resources:
+  schemas:
+    workshop:
+      catalog_name: ${var.catalog_name}
+      name: ${var.schema_name}
+      comment: Schema for the clickstream workshop datasets (DLT target).
+
+  volumes:
+    raw:
+      catalog_name: ${var.catalog_name}
+      schema_name: ${resources.schemas.workshop.name}
+      name: raw
+      volume_type: MANAGED
+      comment: Landing zone for raw CSV files consumed by the DLT pipeline.

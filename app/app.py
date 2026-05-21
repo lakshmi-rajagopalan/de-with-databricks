@@ -1,6 +1,7 @@
 import os
 
-from flask import Flask, render_template_string
+from databricks.sdk import WorkspaceClient
+from flask import Flask, jsonify, render_template_string, request
 
 app = Flask(__name__)
 
@@ -33,207 +34,135 @@ PAGE_TEMPLATE = """
         font-family: Georgia, "Iowan Old Style", "Times New Roman", serif;
         background: linear-gradient(180deg, #f7f1e7 0%, #f1eadf 100%);
         color: var(--ink);
+        min-height: 100vh;
       }
       .page {
-        max-width: 1100px;
+        max-width: 960px;
         margin: 0 auto;
         padding: 40px 24px 64px;
+        display: grid;
+        gap: 16px;
       }
       .hero {
         background: var(--panel);
         border: 1px solid var(--line);
         border-radius: 24px;
         padding: 32px;
-        box-shadow: 0 18px 40px rgba(71, 50, 28, 0.08);
+        box-shadow: 0 18px 40px rgba(71,50,28,0.08);
+        display: flex;
+        align-items: center;
+        gap: 24px;
+        flex-wrap: wrap;
       }
+      .hero-text { flex: 1; min-width: 240px; }
       .eyebrow {
-        font-size: 13px;
+        font-size: 12px;
         letter-spacing: 0.18em;
         text-transform: uppercase;
         color: var(--accent);
-        margin: 0 0 12px;
+        margin: 0 0 8px;
       }
-      h1 {
-        font-size: 46px;
-        line-height: 1;
-        margin: 0 0 16px;
+      h1 { font-size: 36px; line-height: 1; margin: 0; }
+      .client-wrap { flex: 0 0 280px; }
+      .client-label {
+        display: block;
+        font-size: 11px;
+        letter-spacing: 0.14em;
+        text-transform: uppercase;
+        color: var(--accent);
+        margin-bottom: 6px;
       }
-      .hero p {
-        font-size: 18px;
-        line-height: 1.6;
-        color: var(--muted);
-        max-width: 720px;
-        margin: 0;
-      }
-      .grid {
-        display: grid;
-        grid-template-columns: repeat(12, 1fr);
-        gap: 16px;
-        margin-top: 24px;
-      }
-      .card {
-        grid-column: span 4;
-        background: rgba(255, 250, 242, 0.92);
+      .client-select {
+        width: 100%;
+        padding: 10px 14px;
+        border-radius: 12px;
         border: 1px solid var(--line);
-        border-radius: 20px;
-        padding: 24px;
+        background: #fff8ef;
+        color: var(--ink);
+        font: inherit;
+        font-size: 15px;
+        cursor: pointer;
       }
-      .card h2 {
-        margin: 0 0 10px;
-        font-size: 24px;
-      }
-      .card p {
-        margin: 0 0 16px;
-        color: var(--muted);
-        line-height: 1.55;
-      }
-      .actions {
+      .links-row {
         display: flex;
+        gap: 12px;
         flex-wrap: wrap;
-        gap: 10px;
-        margin-top: 18px;
       }
-      .button {
+      .link-btn {
+        flex: 1;
+        min-width: 160px;
         display: inline-flex;
         align-items: center;
         justify-content: center;
-        padding: 10px 14px;
-        border-radius: 999px;
+        padding: 14px 20px;
+        border-radius: 16px;
         border: 1px solid var(--accent);
         background: var(--accent);
         color: #fffaf2;
         text-decoration: none;
-        font-size: 14px;
+        font: inherit;
+        font-size: 15px;
         font-weight: 700;
+        text-align: center;
+        transition: opacity 0.15s;
       }
-      .button.secondary {
-        background: transparent;
-        color: var(--accent);
-      }
-      .button.disabled {
+      .link-btn:hover { opacity: 0.88; }
+      .link-btn.secondary { background: transparent; color: var(--accent); }
+      .link-btn.disabled {
         background: #efe5d9;
         border-color: #e0d2c1;
         color: #8a7d6c;
-        cursor: not-allowed;
-      }
-      .pill {
-        display: inline-block;
-        padding: 8px 12px;
-        border-radius: 999px;
-        background: var(--accent-soft);
-        color: var(--accent);
-        font-size: 13px;
+        pointer-events: none;
       }
       .section {
-        margin-top: 24px;
         background: var(--panel);
         border: 1px solid var(--line);
         border-radius: 24px;
         padding: 28px;
       }
-      .section h3 {
-        margin: 0 0 12px;
-        font-size: 28px;
-      }
-      .section p {
-        margin: 0 0 12px;
-        color: var(--muted);
-        line-height: 1.6;
-      }
-      .control-panel {
-        display: grid;
-        grid-template-columns: 1.05fr 1.35fr;
-        gap: 18px;
-        align-items: start;
-      }
-      .control-stack {
-        display: grid;
-        gap: 14px;
-      }
-      .scenario-list {
-        display: grid;
+      .section-title { font-size: 26px; margin: 0 0 20px; }
+      .scenario-row {
+        display: flex;
         gap: 10px;
-        margin-top: 12px;
+        flex-wrap: wrap;
+        margin-bottom: 20px;
       }
-      .scenario-button {
-        width: 100%;
-        text-align: left;
+      .scenario-btn {
+        flex: 1;
+        min-width: 140px;
         border: 1px solid var(--line);
         background: #fffdf8;
         color: var(--ink);
-        border-radius: 16px;
-        padding: 14px 16px;
+        border-radius: 14px;
+        padding: 12px 16px;
         font: inherit;
+        font-size: 14px;
+        font-weight: 600;
         cursor: pointer;
+        text-align: center;
       }
-      .scenario-button.active {
+      .scenario-btn.active {
         border-color: var(--accent);
         background: #fff3ea;
-        box-shadow: 0 10px 24px rgba(180, 90, 42, 0.1);
-      }
-      .scenario-kicker {
-        display: block;
-        font-size: 12px;
-        letter-spacing: 0.12em;
-        text-transform: uppercase;
         color: var(--accent);
-        margin-bottom: 6px;
       }
-      .briefing {
+      .prompt-area {
         border: 1px solid var(--line);
-        border-radius: 20px;
-        background: #fffdf8;
-        padding: 20px;
-        min-height: 100%;
-      }
-      .briefing h4 {
-        margin: 0 0 10px;
-        font-size: 24px;
-      }
-      .briefing p {
-        margin: 0 0 14px;
-      }
-      .signal-list,
-      .question-list {
-        margin: 0;
-        padding-left: 20px;
-        display: grid;
-        gap: 8px;
-        color: var(--muted);
-      }
-      .question-chip-row {
-        display: flex;
-        flex-wrap: wrap;
-        gap: 10px;
-        margin-top: 16px;
-      }
-      .question-chip {
-        border: 1px solid var(--line);
-        background: #fffaf2;
-        color: var(--ink);
-        border-radius: 999px;
-        padding: 10px 14px;
-        font: inherit;
-        cursor: pointer;
-      }
-      .prompt-box {
-        margin-top: 16px;
         border-radius: 16px;
-        border: 1px solid var(--line);
-        background: #fffaf2;
-        padding: 14px;
+        background: #fffdf8;
+        padding: 16px;
       }
-      .prompt-box-label {
+      .prompt-label {
         display: block;
-        font-size: 12px;
-        letter-spacing: 0.12em;
+        font-size: 11px;
+        letter-spacing: 0.14em;
         text-transform: uppercase;
         color: var(--accent);
         margin-bottom: 8px;
       }
-      .prompt-box textarea {
+      .prompt-area textarea {
         width: 100%;
-        min-height: 110px;
+        min-height: 96px;
         resize: vertical;
         border: 0;
         outline: none;
@@ -241,313 +170,274 @@ PAGE_TEMPLATE = """
         color: var(--ink);
         font: inherit;
         line-height: 1.55;
+        font-size: 15px;
       }
-      .prompt-box-footer {
+      .prompt-footer {
         display: flex;
-        justify-content: space-between;
+        justify-content: flex-end;
+        gap: 10px;
+        margin-top: 10px;
+        flex-wrap: wrap;
+      }
+      .btn {
+        display: inline-flex;
         align-items: center;
-        gap: 12px;
-        margin-top: 8px;
-      }
-      .micro-copy {
-        font-size: 13px;
-        color: var(--muted);
-      }
-      .resource-list {
-        margin: 16px 0 0;
-        padding: 0;
-        list-style: none;
-        display: grid;
-        gap: 12px;
-      }
-      .resource-list li {
-        padding: 14px 16px;
-        border-radius: 16px;
-        border: 1px solid var(--line);
-        background: #fffdf8;
-      }
-      .resource-name {
-        display: block;
-        font-weight: 700;
-        margin-bottom: 4px;
-      }
-      .footer-note {
-        margin-top: 12px;
+        gap: 6px;
+        padding: 10px 18px;
+        border-radius: 999px;
+        border: 1px solid var(--accent);
+        background: transparent;
+        color: var(--accent);
+        font: inherit;
         font-size: 14px;
-        color: var(--muted);
+        font-weight: 700;
+        cursor: pointer;
       }
-      @media (max-width: 900px) {
-        .card { grid-column: span 12; }
-        h1 { font-size: 36px; }
-        .control-panel { grid-template-columns: 1fr; }
+      .btn.primary { background: var(--accent); color: #fffaf2; }
+      .btn:disabled { opacity: 0.5; cursor: not-allowed; }
+      .response-box {
+        margin-top: 16px;
+        border: 1px solid var(--line);
+        border-radius: 16px;
+        background: #fffdf8;
+        padding: 20px;
+      }
+      .response-box.hidden { display: none; }
+      .response-label {
+        display: block;
+        font-size: 11px;
+        letter-spacing: 0.14em;
+        text-transform: uppercase;
+        color: var(--accent);
+        margin-bottom: 12px;
+      }
+      .response-content {
+        font-size: 15px;
+        line-height: 1.7;
+        white-space: pre-wrap;
+        color: var(--ink);
+      }
+      .spinner {
+        display: inline-block;
+        width: 16px; height: 16px;
+        border: 2px solid var(--accent-soft);
+        border-top-color: var(--accent);
+        border-radius: 50%;
+        animation: spin 0.7s linear infinite;
+        vertical-align: middle;
+        margin-right: 8px;
+      }
+      @keyframes spin { to { transform: rotate(360deg); } }
+      @media (max-width: 700px) {
+        h1 { font-size: 28px; }
+        .client-wrap { flex: 0 0 100%; }
+        .link-btn { min-width: 100%; }
       }
     </style>
   </head>
   <body>
     <main class="page">
       <section class="hero">
-        <p class="eyebrow">Sales Call Workspace</p>
-        <h1>{{ app_title }}</h1>
-        <p>{{ app_subtitle }}</p>
-      </section>
-
-      <section class="grid">
-        <article class="card">
-          <span class="pill">Primary Story</span>
-          <h2>Client Demand</h2>
-          <p>Lead with marketplace visibility, engagement, and opportunity signals for each client account.</p>
-          <div class="resource-name">{{ client_dashboard_name }}</div>
-          <p>Use this dashboard during account reviews to discuss posting performance, benchmarks, and recommended actions.</p>
-          <div class="actions">
-            {% if client_dashboard_url %}
-            <a class="button" href="{{ client_dashboard_url }}" target="_blank" rel="noreferrer">Open client dashboard</a>
-            {% else %}
-            <span class="button disabled">Client dashboard URL needed</span>
-            {% endif %}
-          </div>
-        </article>
-        <article class="card">
-          <span class="pill">Supporting Analysis</span>
-          <h2>Marketplace Context</h2>
-          <div class="resource-name">{{ insights_dashboard_name }}</div>
-          <p>Use the broader clickstream dashboard when clients ask how their results compare to platform-wide demand trends.</p>
-          <div class="actions">
-            {% if insights_dashboard_url %}
-            <a class="button" href="{{ insights_dashboard_url }}" target="_blank" rel="noreferrer">Open insights dashboard</a>
-            {% else %}
-            <span class="button disabled">Insights dashboard URL needed</span>
-            {% endif %}
-          </div>
-        </article>
-        <article class="card">
-          <span class="pill">Live Questions</span>
-          <h2>Genie Follow-up</h2>
-          <div class="resource-name">{{ genie_space_name }}</div>
-          <p>Use Genie for ad hoc follow-up questions such as low-CTR jobs, category shifts, and pricing opportunities.</p>
-          <div class="actions">
-            {% if genie_space_url %}
-            <a class="button" href="{{ genie_space_url }}" target="_blank" rel="noreferrer">Open Genie</a>
-            {% else %}
-            <span class="button disabled">Genie URL needed</span>
-            {% endif %}
-            {% if workspace_host %}
-            <a class="button secondary" href="{{ workspace_host }}" target="_blank" rel="noreferrer">Open workspace</a>
-            {% endif %}
-          </div>
-        </article>
-      </section>
-
-      <section class="section">
-        <h3>Interactive Call Briefing</h3>
-        <p>Pick a sales scenario to change the recommended storyline, talking points, and Genie-style follow-up prompt.</p>
-        <div class="control-panel">
-          <div class="control-stack">
-            <div>
-              <span class="pill">Scenario Selector</span>
-              <div class="scenario-list">
-                <button class="scenario-button active" type="button" data-scenario="growth">
-                  <span class="scenario-kicker">Growth Pitch</span>
-                  Client wants evidence of rising demand and whitespace opportunities.
-                </button>
-                <button class="scenario-button" type="button" data-scenario="underperforming">
-                  <span class="scenario-kicker">Performance Recovery</span>
-                  Client is worried about low CTR and weak posting performance.
-                </button>
-                <button class="scenario-button" type="button" data-scenario="benchmark">
-                  <span class="scenario-kicker">Benchmark Review</span>
-                  Client asks how their jobs compare with marketplace category peers.
-                </button>
-              </div>
-            </div>
-            <div class="prompt-box">
-              <label class="prompt-box-label" for="genie-prompt">Suggested Genie Prompt</label>
-              <textarea id="genie-prompt" readonly></textarea>
-              <div class="prompt-box-footer">
-                <span id="prompt-status" class="micro-copy">Prompt updates as you switch scenarios.</span>
-                <button class="button secondary" type="button" id="copy-prompt">Copy prompt</button>
-              </div>
-            </div>
-          </div>
-
-          <div class="briefing">
-            <span class="pill" id="briefing-kicker">Growth Pitch</span>
-            <h4 id="briefing-title">Lead with demand growth and whitespace</h4>
-            <p id="briefing-summary">Start with the client scorecard, then use marketplace context to show where demand is concentrated and which categories are growing faster than the client's current posting mix.</p>
-            <div class="actions">
-              {% if client_dashboard_url %}
-              <a class="button" href="{{ client_dashboard_url }}" target="_blank" rel="noreferrer">Open primary dashboard</a>
-              {% endif %}
-              {% if insights_dashboard_url %}
-              <a class="button secondary" href="{{ insights_dashboard_url }}" target="_blank" rel="noreferrer">Open support dashboard</a>
-              {% endif %}
-            </div>
-            <h5>Signals to highlight</h5>
-            <ul class="signal-list" id="signal-list"></ul>
-            <h5>Suggested follow-up questions</h5>
-            <ul class="question-list" id="question-list"></ul>
-            <div class="question-chip-row" id="question-chip-row"></div>
-          </div>
+        <div class="hero-text">
+          <p class="eyebrow">Sales Call Workspace</p>
+          <h1>{{ app_title }}</h1>
+        </div>
+        <div class="client-wrap">
+          <label class="client-label" for="client-select">Account</label>
+          <select id="client-select" class="client-select">
+            <option value="">Loading clients…</option>
+          </select>
         </div>
       </section>
 
-      <section class="section">
-        <h3>Recommended Sales Flow</h3>
-        <ul class="resource-list">
-          <li>
-            <span class="resource-name">1. Open Client Demand Intelligence</span>
-            Start with the client scorecard, watchlist, category benchmark, and opportunity recommendations.
-          </li>
-          <li>
-            <span class="resource-name">2. Add marketplace context</span>
-            Use Clickstream Insights to show broader category demand, search behavior, and demand concentration.
-          </li>
-          <li>
-            <span class="resource-name">3. Ask a live follow-up</span>
-            Use Genie to answer client-specific questions without switching into SQL.
-          </li>
-        </ul>
-      </section>
+      <div class="links-row">
+        {% if client_dashboard_url and client_dashboard_url != 'N/A' %}
+        <a class="link-btn" href="{{ client_dashboard_url }}" target="_blank" rel="noreferrer">Client Demand ↗</a>
+        {% else %}
+        <span class="link-btn disabled">Client Demand</span>
+        {% endif %}
+        {% if insights_dashboard_url and insights_dashboard_url != 'N/A' %}
+        <a class="link-btn" href="{{ insights_dashboard_url }}" target="_blank" rel="noreferrer">Marketplace Context ↗</a>
+        {% else %}
+        <span class="link-btn disabled">Marketplace Context</span>
+        {% endif %}
+        {% if genie_space_url and genie_space_url != 'N/A' %}
+        <a class="link-btn secondary" href="{{ genie_space_url }}" target="_blank" rel="noreferrer">Genie Space ↗</a>
+        {% else %}
+        <span class="link-btn disabled secondary">Genie Space</span>
+        {% endif %}
+      </div>
 
       <section class="section">
-        <h3>Assets In This App Shell</h3>
-        <p>This app shell is the presentation layer on top of the workshop analytics assets. It does not replace the dashboards; it packages them into a business-facing experience.</p>
-        <ul class="resource-list">
-          <li>
-            <span class="resource-name">Client dashboard</span>
-            {% if client_dashboard_url %}<a href="{{ client_dashboard_url }}" target="_blank" rel="noreferrer">{{ client_dashboard_name }}</a>{% else %}{{ client_dashboard_name }}{% endif %}
-          </li>
-          <li>
-            <span class="resource-name">Insights dashboard</span>
-            {% if insights_dashboard_url %}<a href="{{ insights_dashboard_url }}" target="_blank" rel="noreferrer">{{ insights_dashboard_name }}</a>{% else %}{{ insights_dashboard_name }}{% endif %}
-          </li>
-          <li>
-            <span class="resource-name">Genie space</span>
-            {% if genie_space_url %}<a href="{{ genie_space_url }}" target="_blank" rel="noreferrer">{{ genie_space_name }}</a>{% else %}{{ genie_space_name }}{% endif %}
-          </li>
-          <li>
-            <span class="resource-name">SQL warehouse</span>
-            {{ warehouse_label }}
-          </li>
-        </ul>
-        <p class="footer-note">This shell now launches the deployed dashboards directly. Genie can also be linked once a stable workspace URL is configured for the space.</p>
+        <h2 class="section-title">Upwork Sales Assistant</h2>
+        <div class="scenario-row">
+          <button class="scenario-btn active" type="button" data-scenario="growth">Growth Pitch</button>
+          <button class="scenario-btn" type="button" data-scenario="underperforming">Performance Recovery</button>
+          <button class="scenario-btn" type="button" data-scenario="benchmark">Benchmark Review</button>
+        </div>
+        <div class="prompt-area">
+          <label class="prompt-label" for="genie-prompt">Prompt</label>
+          <textarea id="genie-prompt"></textarea>
+          <div class="prompt-footer">
+            <button class="btn" type="button" id="copy-prompt">Copy</button>
+            <button class="btn primary" type="button" id="ask-genie">Ask Genie →</button>
+          </div>
+        </div>
+        <div id="response-box" class="response-box hidden">
+          <span class="response-label">Genie Response</span>
+          <div id="response-content" class="response-content"></div>
+        </div>
       </section>
+
     </main>
     <script>
       const scenarios = {
         growth: {
-          kicker: "Growth Pitch",
-          title: "Lead with demand growth and whitespace",
-          summary: "Start with the client scorecard, then use marketplace context to show where demand is concentrated and which categories are growing faster than the client's current posting mix.",
-          prompt: "Which client categories show the biggest mismatch between marketplace demand and this client's current posting mix, and what opportunities should we discuss on the call?",
-          signals: [
-            "Category benchmark gaps between client mix and overall marketplace demand",
-            "High-impression categories where the client has limited active job coverage",
-            "Opportunity recommendations driven by CTR and demand concentration"
-          ],
-          questions: [
-            "Where is demand growing faster than this client is currently hiring?",
-            "Which categories have strong marketplace demand but weak client presence?",
-            "What recommendation should the account team make next?"
-          ]
+          prompt: "Which categories show the biggest mismatch between marketplace demand and {client}'s posting mix, and what opportunities should we discuss on the call?"
         },
         underperforming: {
-          kicker: "Performance Recovery",
-          title: "Diagnose low-performing job postings",
-          summary: "Use the client dashboard to identify weak CTR jobs, then bring in platform context to show whether the problem is posting quality, category competition, or marketplace positioning.",
-          prompt: "Which jobs for this client have the weakest CTR relative to category peers, and what likely actions should we recommend based on category and position performance?",
-          signals: [
-            "Low CTR jobs with strong impressions but poor engagement",
-            "Position bias effects that suggest visibility without compelling conversion",
-            "Category-level benchmarks showing whether the weakness is client-specific or market-wide"
-          ],
-          questions: [
-            "Which jobs are underperforming most versus benchmark?",
-            "Is the issue visibility, competition, or listing quality?",
-            "Which jobs should be rewritten, repriced, or reprioritized?"
-          ]
+          prompt: "Which jobs for {client} have the weakest CTR relative to category peers, and what actions should we recommend?"
         },
         benchmark: {
-          kicker: "Benchmark Review",
-          title: "Frame the client against marketplace peers",
-          summary: "Anchor the conversation in comparative evidence so the client can see where they are ahead, where they lag, and which benchmark gaps matter most commercially.",
-          prompt: "How does this client's posting performance compare with marketplace benchmarks by category, and which benchmark gaps should we focus on during the review?",
-          signals: [
-            "Category-level benchmark deltas for CTR, impressions, and opportunity volume",
-            "Relative standing of the client's portfolio across active categories",
-            "Client segments where benchmark gaps connect directly to commercial action"
-          ],
-          questions: [
-            "Where is this client above benchmark?",
-            "Which benchmark gaps are most material for the account conversation?",
-            "What is the clearest story to tell in two minutes?"
-          ]
+          prompt: "How does {client}'s posting performance compare with marketplace benchmarks by category, and which gaps should we focus on?"
         }
       };
 
-      const scenarioButtons = Array.from(document.querySelectorAll('.scenario-button'));
-      const briefingKicker = document.getElementById('briefing-kicker');
-      const briefingTitle = document.getElementById('briefing-title');
-      const briefingSummary = document.getElementById('briefing-summary');
-      const signalList = document.getElementById('signal-list');
-      const questionList = document.getElementById('question-list');
-      const questionChipRow = document.getElementById('question-chip-row');
-      const promptBox = document.getElementById('genie-prompt');
-      const promptStatus = document.getElementById('prompt-status');
-      const copyPromptButton = document.getElementById('copy-prompt');
+      let currentClient = '';
+      let currentScenarioName = 'growth';
 
-      function fillList(element, values) {
-        element.innerHTML = values.map((value) => `<li>${value}</li>`).join('');
-      }
-
-      function fillQuestionChips(values) {
-        questionChipRow.innerHTML = values
-          .map((value) => `<button class="question-chip" type="button" data-question="${value.replace(/"/g, '&quot;')}">${value}</button>`)
-          .join('');
-      }
-
-      function setScenario(name) {
-        const scenario = scenarios[name];
-        if (!scenario) return;
-
-        scenarioButtons.forEach((button) => {
-          button.classList.toggle('active', button.dataset.scenario === name);
+      const clientSelect = document.getElementById('client-select');
+      fetch('/api/clients')
+        .then(r => r.json())
+        .then(data => {
+          if (data.error) {
+            clientSelect.innerHTML = `<option value="">Error: ${data.error.slice(0, 80)}</option>`;
+            return;
+          }
+          const clients = Array.isArray(data) ? data : [];
+          clientSelect.innerHTML = '<option value="">Select a client\u2026</option>';
+          clients.forEach(c => {
+            const opt = document.createElement('option');
+            opt.value = c.client_uid;
+            opt.textContent = c.company_name;
+            opt.dataset.name = c.company_name;
+            clientSelect.appendChild(opt);
+          });
+        })
+        .catch(() => {
+          clientSelect.innerHTML = '<option value="">Could not load clients</option>';
         });
 
-        briefingKicker.textContent = scenario.kicker;
-        briefingTitle.textContent = scenario.title;
-        briefingSummary.textContent = scenario.summary;
-        promptBox.value = scenario.prompt;
-        fillList(signalList, scenario.signals);
-        fillList(questionList, scenario.questions);
-        fillQuestionChips(scenario.questions);
-        promptStatus.textContent = 'Prompt updated for the selected scenario.';
+      clientSelect.addEventListener('change', () => {
+        const opt = clientSelect.options[clientSelect.selectedIndex];
+        currentClient = opt ? (opt.dataset.name || '') : '';
+        refreshPrompt();
+      });
+
+      const scenarioBtns = Array.from(document.querySelectorAll('.scenario-btn'));
+      scenarioBtns.forEach(btn => {
+        btn.addEventListener('click', () => {
+          currentScenarioName = btn.dataset.scenario;
+          scenarioBtns.forEach(b => b.classList.toggle('active', b === btn));
+          refreshPrompt();
+        });
+      });
+
+      function refreshPrompt() {
+        const s = scenarios[currentScenarioName];
+        if (!s) return;
+        document.getElementById('genie-prompt').value =
+          s.prompt.replace('{client}', currentClient || 'this client');
       }
 
-      scenarioButtons.forEach((button) => {
-        button.addEventListener('click', () => setScenario(button.dataset.scenario));
-      });
-
-      questionChipRow.addEventListener('click', (event) => {
-        const target = event.target;
-        if (!(target instanceof HTMLElement) || !target.dataset.question) return;
-        promptBox.value = target.dataset.question;
-        promptStatus.textContent = 'Loaded a follow-up question into the prompt box.';
-      });
-
-      copyPromptButton.addEventListener('click', async () => {
+      document.getElementById('copy-prompt').addEventListener('click', async () => {
         try {
-          await navigator.clipboard.writeText(promptBox.value);
-          promptStatus.textContent = 'Prompt copied to clipboard.';
-        } catch (error) {
-          promptStatus.textContent = 'Clipboard copy failed. Copy the prompt manually.';
+          await navigator.clipboard.writeText(document.getElementById('genie-prompt').value);
+        } catch (_) {}
+      });
+
+      const askBtn = document.getElementById('ask-genie');
+      const responseBox = document.getElementById('response-box');
+      const responseContent = document.getElementById('response-content');
+
+      askBtn.addEventListener('click', async () => {
+        const prompt = document.getElementById('genie-prompt').value.trim();
+        if (!prompt) return;
+        askBtn.disabled = true;
+        responseBox.classList.remove('hidden');
+        responseContent.innerHTML = '<span class="spinner"></span>Asking Genie\u2026';
+        try {
+          const res = await fetch('/api/ask-genie', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ prompt })
+          });
+          const data = await res.json();
+          responseContent.textContent = data.error
+            ? 'Error: ' + data.error
+            : (data.response || '(no response)');
+        } catch (err) {
+          responseContent.textContent = 'Request failed: ' + err.message;
+        } finally {
+          askBtn.disabled = false;
         }
       });
 
-      setScenario('growth');
+      refreshPrompt();
     </script>
   </body>
 </html>
 """
+
+
+@app.route("/api/clients")
+def api_clients():
+    warehouse_id = os.getenv("WAREHOUSE_ID", "")
+    if not warehouse_id:
+        return jsonify({"error": "WAREHOUSE_ID not configured"})
+    try:
+        w = WorkspaceClient()
+        resp = w.statement_execution.execute_statement(
+            statement=(
+                "SELECT client_uid, company_name "
+                "FROM workspace.clickstream_workshop.silver_clients "
+                "ORDER BY company_name"
+            ),
+            warehouse_id=warehouse_id,
+        )
+        if resp.status and resp.status.state and resp.status.state.value not in ("SUCCEEDED",):
+            err = (resp.status.error.message if resp.status.error else None) or str(resp.status.state)
+            return jsonify({"error": err}), 500
+        rows = (resp.result.data_array or []) if resp.result else []
+        return jsonify([{"client_uid": r[0], "company_name": r[1]} for r in rows])
+    except Exception as exc:
+        return jsonify({"error": str(exc)}), 500
+
+
+@app.route("/api/ask-genie", methods=["POST"])
+def api_ask_genie():
+    data = request.get_json(silent=True) or {}
+    prompt = (data.get("prompt") or "").strip()
+    if not prompt:
+        return jsonify({"error": "No prompt provided"}), 400
+    genie_space_id = os.getenv("GENIE_SPACE_ID", "")
+    if not genie_space_id:
+        url = os.getenv("GENIE_SPACE_URL", "")
+        if "/genie/rooms/" in url:
+            genie_space_id = url.rstrip("/").split("/genie/rooms/")[-1]
+    if not genie_space_id:
+        return jsonify({"error": "Genie space not configured"}), 503
+    try:
+        w = WorkspaceClient()
+        result = w.genie.start_conversation_and_wait(space_id=genie_space_id, content=prompt)
+        parts = [
+            att.text.content
+            for att in (result.attachments or [])
+            if att.text and att.text.content
+        ]
+        return jsonify({"response": "\n\n".join(parts) or "Genie did not return a text response."})
+    except Exception as exc:
+        return jsonify({"error": str(exc)}), 500
 
 
 @app.route("/")

@@ -18,13 +18,13 @@
 # MAGIC - Structural violations **fail** the pipeline (`expect_or_fail`)
 # MAGIC
 # MAGIC **DLT concepts covered:**
-# MAGIC - `@dlt.expect`, `@dlt.expect_or_drop`, `@dlt.expect_or_fail`
-# MAGIC - `dlt.read()` to reference upstream tables in the same pipeline
+# MAGIC - `@dp.expect`, `@dp.expect_or_drop`, `@dp.expect_or_fail`
+# MAGIC - `dp.read()` to reference upstream tables in the same pipeline
 # MAGIC - `regexp_extract` / conditional casting to parse mixed-type columns
 
 # COMMAND ----------
 
-import dlt
+from pyspark import pipelines as dp
 from pyspark.sql.functions import (
     col, to_timestamp, trim, when, regexp_extract, current_timestamp,
 )
@@ -39,34 +39,60 @@ from pyspark.sql.types import IntegerType, DoubleType, BooleanType
 
 # COMMAND ----------
 
-@dlt.table(
+@dp.table(
     name="silver_impression_events",
     comment="Impression events — typed, bot-free, with valid positions and opening IDs",
     table_properties={"quality": "silver"},
 )
-@dlt.expect_or_drop("event_id_not_null", "event_id IS NOT NULL")
-@dlt.expect_or_drop("opening_uid_not_null", "opening_uid IS NOT NULL")
-@dlt.expect_or_drop("no_bots", "is_bot = false")
-@dlt.expect_or_drop("valid_position", "position > 0")
-@dlt.expect("known_sublocation", "sublocation IN ('search_results', 'featured_jobs')")
-@dlt.expect("known_sort", "sort IN ('relevance', 'recency')")
-@dlt.expect("reasonable_event_ts", "event_ts <= current_timestamp()")
+@dp.expect_or_drop("event_id_not_null", "event_id IS NOT NULL")
+@dp.expect_or_drop("opening_uid_not_null", "opening_uid IS NOT NULL")
+@dp.expect_or_drop("search_guid_not_null", "search_guid IS NOT NULL")
+@dp.expect_or_drop("no_bots", "is_bot = false")
+@dp.expect_or_drop("valid_position", "position > 0")
 def silver_impression_events():
     return (
-        dlt.read("bronze_impression_events")
+        dp.read("bronze_impression_events")
         .select(
             col("event_id"),
             col("visitor_id"),
             col("search_guid"),
             col("opening_uid"),
             col("position").cast(IntegerType()).alias("position"),
-            trim(col("sublocation")).alias("sublocation"),
-            trim(col("search_query")).alias("search_query"),
-            to_timestamp(col("event_ts")).alias("event_ts"),
             to_timestamp(col("collector_ts")).alias("collector_ts"),
             when(col("is_bot") == "True", True).otherwise(False).alias("is_bot"),
-            col("page").cast(IntegerType()).alias("page"),
+        )
+    )
+
+# COMMAND ----------
+# MAGIC %md
+# MAGIC ## silver_search_events
+# MAGIC
+# MAGIC One row per search session. `search_guid` is the PK linking all impressions
+# MAGIC from the same query into a single session context.
+
+# COMMAND ----------
+
+@dp.table(
+    name="silver_search_events",
+    comment="Search session events — one row per search with query context and session attributes",
+    table_properties={"quality": "silver"},
+)
+@dp.expect_or_drop("search_guid_not_null", "search_guid IS NOT NULL")
+@dp.expect_or_drop("visitor_id_not_null", "visitor_id IS NOT NULL")
+@dp.expect("known_sublocation", "sublocation IN ('search_results', 'featured_jobs')")
+@dp.expect("known_sort", "sort IN ('relevance', 'recency')")
+@dp.expect("reasonable_event_ts", "event_ts <= current_timestamp()")
+def silver_search_events():
+    return (
+        dp.read("bronze_search_events")
+        .select(
+            col("search_guid"),
+            col("visitor_id"),
+            trim(col("search_query")).alias("search_query"),
+            trim(col("sublocation")).alias("sublocation"),
             trim(col("sort")).alias("sort"),
+            col("page").cast(IntegerType()).alias("page"),
+            to_timestamp(col("event_ts")).alias("event_ts"),
         )
     )
 
@@ -90,16 +116,16 @@ def silver_impression_events():
 
 # COMMAND ----------
 
-@dlt.table(
+@dp.table(
     name="silver_click_events",
     comment="Click events — typed, bot-free, deduplicated, with safe time_to_click parsing",
     table_properties={"quality": "silver"},
 )
-@dlt.expect_or_drop("event_id_not_null", "event_id IS NOT NULL")
-@dlt.expect_or_drop("no_bots", "is_bot = false")
-@dlt.expect_or_drop("valid_position", "position > 0")
-@dlt.expect("reasonable_event_ts", "event_ts <= current_timestamp()")
-@dlt.expect("non_negative_time_to_click", "time_to_click_secs IS NULL OR time_to_click_secs >= 0")
+@dp.expect_or_drop("event_id_not_null", "event_id IS NOT NULL")
+@dp.expect_or_drop("no_bots", "is_bot = false")
+@dp.expect_or_drop("valid_position", "position > 0")
+@dp.expect("reasonable_event_ts", "event_ts <= current_timestamp()")
+@dp.expect("non_negative_time_to_click", "time_to_click_secs IS NULL OR time_to_click_secs >= 0")
 def silver_click_events():
     # Extract only strings that look like an integer (optional leading minus + digits).
     # Everything else (e.g. "instant", "fast") becomes null.
@@ -111,7 +137,7 @@ def silver_click_events():
     )
 
     return (
-        dlt.read("bronze_click_events")
+        dp.read("bronze_click_events")
         .select(
             col("event_id"),
             col("visitor_id"),
@@ -142,16 +168,16 @@ def silver_click_events():
 
 # COMMAND ----------
 
-@dlt.table(
+@dp.table(
     name="silver_job_openings",
     comment="Job openings — typed, title-validated, with safe budget parsing",
     table_properties={"quality": "silver"},
 )
-@dlt.expect_or_fail("opening_uid_not_null", "opening_uid IS NOT NULL")
-@dlt.expect_or_drop("title_not_null", "title IS NOT NULL AND title != ''")
-@dlt.expect("positive_budget", "budget_amount IS NULL OR budget_amount > 0")
-@dlt.expect("reasonable_posted_at", "posted_at <= current_timestamp()")
-@dlt.expect("known_budget_type", "budget_type IN ('hourly', 'fixed', 'monthly', 'negotiable')")
+@dp.expect_or_fail("opening_uid_not_null", "opening_uid IS NOT NULL")
+@dp.expect_or_drop("title_not_null", "title IS NOT NULL AND title != ''")
+@dp.expect("positive_budget", "budget_amount IS NULL OR budget_amount > 0")
+@dp.expect("reasonable_posted_at", "posted_at <= current_timestamp()")
+@dp.expect("known_budget_type", "budget_type IN ('hourly', 'fixed', 'monthly', 'negotiable')")
 def silver_job_openings():
     # Parse budget_amount: treat any non-numeric string as null
     numeric_budget = (
@@ -162,7 +188,7 @@ def silver_job_openings():
     )
 
     return (
-        dlt.read("bronze_job_openings")
+        dp.read("bronze_job_openings")
         .select(
             col("opening_uid"),
             trim(col("title")).alias("title"),
@@ -196,15 +222,15 @@ def silver_job_openings():
 
 # COMMAND ----------
 
-@dlt.table(
+@dp.table(
     name="silver_clients",
     comment="Client profiles — typed, with safe total_spend parsing and rating validation",
     table_properties={"quality": "silver"},
 )
-@dlt.expect_or_fail("client_uid_not_null", "client_uid IS NOT NULL")
-@dlt.expect("payment_verified_known", "payment_verified IN (true, false)")
-@dlt.expect("valid_rating", "avg_rating IS NULL OR (avg_rating >= 0 AND avg_rating <= 5)")
-@dlt.expect("reasonable_member_since", "member_since <= current_date()")
+@dp.expect_or_fail("client_uid_not_null", "client_uid IS NOT NULL")
+@dp.expect("payment_verified_known", "payment_verified IN (true, false)")
+@dp.expect("valid_rating", "avg_rating IS NULL OR (avg_rating >= 0 AND avg_rating <= 5)")
+@dp.expect("reasonable_member_since", "member_since <= current_date()")
 def silver_clients():
     numeric_spend = (
         when(
@@ -220,7 +246,7 @@ def silver_clients():
     )
 
     return (
-        dlt.read("bronze_clients")
+        dp.read("bronze_clients")
         .select(
             col("client_uid"),
             trim(col("company_name")).alias("company_name"),
@@ -256,14 +282,14 @@ def silver_clients():
 
 # COMMAND ----------
 
-@dlt.table(
+@dp.table(
     name="silver_freelancers",
     comment="Freelancer profiles — typed, with safe hourly_rate and job_success_score parsing",
     table_properties={"quality": "silver"},
 )
-@dlt.expect_or_fail("visitor_id_not_null", "visitor_id IS NOT NULL")
-@dlt.expect("valid_job_success_score", "job_success_score IS NULL OR (job_success_score >= 0 AND job_success_score <= 100)")
-@dlt.expect("reasonable_member_since", "member_since <= current_date()")
+@dp.expect_or_fail("visitor_id_not_null", "visitor_id IS NOT NULL")
+@dp.expect("valid_job_success_score", "job_success_score IS NULL OR (job_success_score >= 0 AND job_success_score <= 100)")
+@dp.expect("reasonable_member_since", "member_since <= current_date()")
 def silver_freelancers():
     numeric_rate = (
         when(
@@ -279,7 +305,7 @@ def silver_freelancers():
     )
 
     return (
-        dlt.read("bronze_freelancers")
+        dp.read("bronze_freelancers")
         .select(
             col("visitor_id"),
             trim(col("name")).alias("name"),
@@ -297,4 +323,4 @@ def silver_freelancers():
 # MAGIC %md
 # MAGIC ---
 # MAGIC **Silver complete.** Five validated tables are ready for aggregation.
-# MAGIC Open `03_gold.py` to build the business-facing metrics layer.
+# MAGIC Open `gold.py` to build the business-facing metrics layer.
