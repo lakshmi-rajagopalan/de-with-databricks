@@ -198,3 +198,44 @@ SELECT
 FROM system.lineage.column_lineage
 WHERE target_table_full_name = 'workspace.clickstream_workshop.fact_search_events'
 ORDER BY target_column_name;
+
+-- COMMAND ----------
+-- MAGIC %md
+-- MAGIC ## 6 · App Service Principal — grant data access
+-- MAGIC
+-- MAGIC The Databricks App (Module 9) runs under a dedicated service principal that is
+-- MAGIC created at deploy time. That SP is **not** a member of the `analyst` or
+-- MAGIC `data_engineer` groups, so the grants above do not cover it automatically.
+-- MAGIC
+-- MAGIC **After every fresh `bundle deploy`, get the SP ID and grant access:**
+-- MAGIC
+-- MAGIC ```bash
+-- MAGIC NUMERIC_ID=$(databricks apps get clickstream-client-demand-app --output json \
+-- MAGIC   | python3 -c "import sys,json; print(json.load(sys.stdin)['service_principal_id'])")
+-- MAGIC SP_ID=$(databricks service-principals get $NUMERIC_ID --output json \
+-- MAGIC   | python3 -c "import sys,json; print(json.load(sys.stdin)['applicationId'])")
+-- MAGIC echo $SP_ID
+-- MAGIC ```
+-- MAGIC
+-- MAGIC Then run the three SQL cells below, substituting the SP ID.
+
+-- COMMAND ----------
+
+-- Replace <SP_ID> with the application UUID returned above
+GRANT USE CATALOG ON CATALOG workspace                      TO `<SP_ID>`;
+GRANT USE SCHEMA  ON SCHEMA  workspace.clickstream_workshop TO `<SP_ID>`;
+GRANT SELECT      ON SCHEMA  workspace.clickstream_workshop TO `<SP_ID>`;
+
+-- COMMAND ----------
+-- MAGIC %md
+-- MAGIC **Grant Genie space access via API**
+-- MAGIC
+-- MAGIC The Genie space lives in `/Shared` so its ACL is manageable via the permissions API:
+-- MAGIC
+-- MAGIC ```bash
+-- MAGIC SPACE_ID=$(databricks genie list-spaces --output json \
+-- MAGIC   | python3 -c "import sys,json; [print(s['space_id']) for s in json.load(sys.stdin) if s.get('title')=='Clickstream Analytics']")
+-- MAGIC
+-- MAGIC databricks api patch "/api/2.0/permissions/genie/$SPACE_ID" \
+-- MAGIC   --json "{\"access_control_list\": [{\"service_principal_name\": \"$SP_ID\", \"permission_level\": \"CAN_MANAGE\"}]}"
+-- MAGIC ```

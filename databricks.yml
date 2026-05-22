@@ -13,15 +13,9 @@ variables:
     default: clickstream_workshop
   warehouse_id:
     description: SQL warehouse ID used by Lakeview dashboards.
-  client_dashboard_url:
-    description: Published URL for the Client Demand Intelligence dashboard.
-    default: "N/A"
-  insights_dashboard_url:
-    description: Published URL for the Clickstream Insights dashboard.
-    default: "N/A"
-  genie_space_url:
-    description: URL for the Genie space used by the app shell.
-    default: "N/A"
+  genie_space_id:
+    description: Genie space ID created by scripts/create_genie_space.sh.
+    default: ""
 
 targets:
   dev:

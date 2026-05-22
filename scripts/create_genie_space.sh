@@ -79,6 +79,25 @@ if [[ -n "$EXISTING_SPACE_ID" && "$EXISTING_SPACE_ID" != "null" ]]; then
 fi
 
 echo "Creating Genie space: $SPACE_NAME"
-databricks genie create-space "$WAREHOUSE_ID" "$SERIALIZED_SPACE_JSON" \
+SPACE_ID=$(databricks genie create-space "$WAREHOUSE_ID" "$SERIALIZED_SPACE_JSON" \
   --title "$SPACE_NAME" \
-  --description "Upwork job search clickstream - impressions, clicks, CTR"
+  --description "Upwork job search clickstream - impressions, clicks, CTR" \
+  --output json 2>/dev/null | jq -r '.space_id // .id // ""')
+
+if [[ -z "$SPACE_ID" || "$SPACE_ID" == "null" ]]; then
+  echo "Created (space_id unavailable in response — check genie list-spaces)"
+else
+  echo "Created Genie space: $SPACE_NAME ($SPACE_ID)"
+
+  # Move to /Shared so workspace ACLs are manageable
+  databricks api patch "/api/2.0/genie/spaces/$SPACE_ID" \
+    --json "{\"parent_path\": \"/Shared\", \"title\": \"$SPACE_NAME\", \"warehouse_id\": \"$WAREHOUSE_ID\"}" \
+    >/dev/null 2>&1 && echo "Moved to /Shared"
+
+  # Grant app SP access if APP_SP_UUID is provided
+  if [[ -n "${APP_SP_UUID:-}" ]]; then
+    databricks api patch "/api/2.0/permissions/genie/$SPACE_ID" \
+      --json "{\"access_control_list\": [{\"service_principal_name\": \"$APP_SP_UUID\", \"permission_level\": \"CAN_MANAGE\"}]}" \
+      >/dev/null 2>&1 && echo "Granted CAN_MANAGE to $APP_SP_UUID"
+  fi
+fi

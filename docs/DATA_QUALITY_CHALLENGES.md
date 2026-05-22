@@ -2,6 +2,11 @@
 
 | Dataset | Issue | How silver handles it |
 |---------|-------|-----------------------|
+| `search_events` | Null `search_guid` | `expect_or_drop` removes the row |
+| `search_events` | Null `visitor_id` | `expect_or_drop` removes the row |
+| `search_events` | Unknown `sublocation` value | `expect` warning |
+| `search_events` | Unknown `sort` value | `expect` warning |
+| `search_events` | Future-dated `event_ts` | `expect` warning |
 | `impression_events` / `click_events` | Null `event_id` | `expect_or_drop` removes the row |
 | `click_events` | `time_to_click_secs` contains `"instant"`, `"fast"`, and negatives | `regexp_extract` -> null for non-numeric; `expect` warns on negatives |
 | `click_events` | Duplicate `event_id` rows | `dropDuplicates(["event_id"])` |

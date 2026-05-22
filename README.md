@@ -1,13 +1,10 @@
 # Upwork Clickstream - Data Engineering Workshop
 
-A hands-on Databricks workshop covering five canonical data engineering steps end-to-end:
-from raw CSV ingestion through a Delta Live Tables medallion pipeline to governance, exploration,
-and dashboard-ready analytics.
+A hands-on Databricks workshop built on Upwork job marketplace clickstream data — job impressions, click events, and job opening metadata.
 
-Domain: Upwork job marketplace clickstream — job impressions, click events, and job opening
-metadata used to analyze search relevance, position bias, and job performance.
+Covers the full data engineering stack: ingestion, medallion pipelines, data quality, semantic layer, dashboards, Genie, governed access, and a business-facing app.
 
-For step-by-step workshop instructions and presenter talking points, see [WORKSHOP.md](WORKSHOP.md).
+For step-by-step workshop instructions, see [WORKSHOP.md](WORKSHOP.md).
 
 ---
 

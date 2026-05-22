@@ -1,3 +1,4 @@
+import functools
 import os
 
 from databricks.sdk import WorkspaceClient
@@ -6,10 +7,41 @@ from flask import Flask, jsonify, render_template_string, request
 app = Flask(__name__)
 
 
-def build_dashboard_url(host: str, dashboard_id: str) -> str:
-  if not host or not dashboard_id:
-    return ""
-  return f"{host.rstrip('/')}/dashboardsv3/{dashboard_id}/published"
+@functools.lru_cache(maxsize=1)
+def _resolve_resources():
+    """Build dashboard URLs from bundle-injected env vars; discover Genie space via SDK."""
+    import sys
+    host = os.getenv("DATABRICKS_HOST", "").rstrip("/")
+    if host and not host.startswith("http"):
+        host = f"https://{host}"
+    client_dashboard_id = os.getenv("CLIENT_DASHBOARD_ID", "")
+    insights_dashboard_id = os.getenv("INSIGHTS_DASHBOARD_ID", "")
+    client_url = f"{host}/dashboardsv3/{client_dashboard_id}/published" if client_dashboard_id else ""
+    insights_url = f"{host}/dashboardsv3/{insights_dashboard_id}/published" if insights_dashboard_id else ""
+    genie_url = genie_id = ""
+    if not host:
+        return client_url, insights_url, genie_url, genie_id
+    # Try bundle-injected space ID first; fall back to SDK discovery by name
+    genie_id = os.getenv("GENIE_SPACE_ID", "")
+    if genie_id:
+        genie_url = f"{host}/genie/rooms/{genie_id}"
+    else:
+        try:
+            w = WorkspaceClient()
+            resp = w.genie.list_spaces()
+            spaces = (
+                getattr(resp, "genie_spaces", None)
+                or getattr(resp, "spaces", None)
+                or list(resp)
+            )
+            for space in (spaces or []):
+                if getattr(space, "title", "") == os.getenv("GENIE_SPACE_NAME", "Clickstream Analytics"):
+                    genie_id = space.space_id
+                    genie_url = f"{host}/genie/rooms/{genie_id}"
+                    break
+        except Exception as exc:
+            print(f"[genie] list_spaces failed: {exc}", file=sys.stderr)
+    return client_url, insights_url, genie_url, genie_id
 
 PAGE_TEMPLATE = """
 <!doctype html>
@@ -404,6 +436,7 @@ def api_clients():
                 "ORDER BY company_name"
             ),
             warehouse_id=warehouse_id,
+            wait_timeout="50s",
         )
         if resp.status and resp.status.state and resp.status.state.value not in ("SUCCEEDED",):
             err = (resp.status.error.message if resp.status.error else None) or str(resp.status.state)
@@ -420,11 +453,7 @@ def api_ask_genie():
     prompt = (data.get("prompt") or "").strip()
     if not prompt:
         return jsonify({"error": "No prompt provided"}), 400
-    genie_space_id = os.getenv("GENIE_SPACE_ID", "")
-    if not genie_space_id:
-        url = os.getenv("GENIE_SPACE_URL", "")
-        if "/genie/rooms/" in url:
-            genie_space_id = url.rstrip("/").split("/genie/rooms/")[-1]
+    _, _, _, genie_space_id = _resolve_resources()
     if not genie_space_id:
         return jsonify({"error": "Genie space not configured"}), 503
     try:
@@ -442,15 +471,7 @@ def api_ask_genie():
 
 @app.route("/")
 def index() -> str:
-    workspace_host = os.getenv("WORKSPACE_HOST", "")
-    client_dashboard_url = os.getenv("CLIENT_DASHBOARD_URL", "") or build_dashboard_url(
-        workspace_host,
-        os.getenv("CLIENT_DASHBOARD_ID", ""),
-    )
-    insights_dashboard_url = os.getenv("INSIGHTS_DASHBOARD_URL", "") or build_dashboard_url(
-        workspace_host,
-        os.getenv("INSIGHTS_DASHBOARD_ID", ""),
-    )
+    client_dashboard_url, insights_dashboard_url, genie_space_url, _ = _resolve_resources()
     return render_template_string(
         PAGE_TEMPLATE,
         app_title=os.getenv("APP_TITLE", "Client Demand Intelligence App"),
@@ -461,10 +482,10 @@ def index() -> str:
         client_dashboard_name=os.getenv("CLIENT_DASHBOARD_NAME", "Client Demand Intelligence"),
         insights_dashboard_name=os.getenv("INSIGHTS_DASHBOARD_NAME", "Clickstream Insights"),
         genie_space_name=os.getenv("GENIE_SPACE_NAME", "Clickstream Analytics"),
-        workspace_host=workspace_host,
+        workspace_host="",
         client_dashboard_url=client_dashboard_url,
         insights_dashboard_url=insights_dashboard_url,
-        genie_space_url=os.getenv("GENIE_SPACE_URL", ""),
+        genie_space_url=genie_space_url,
         warehouse_label=os.getenv("WAREHOUSE_LABEL", "Attached SQL warehouse"),
     )
 
