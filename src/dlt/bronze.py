@@ -25,27 +25,29 @@
 # MAGIC
 # MAGIC **DLT concepts covered:**
 # MAGIC - `@dp.table` decorator
+# MAGIC - Auto Loader (`cloudFiles`) for incremental file ingestion
 # MAGIC - `spark.conf.get()` to read pipeline parameters set in the DLT UI
 # MAGIC - Metadata columns for lineage tracking
 
 # COMMAND ----------
 
 from pyspark import pipelines as dp
-from pyspark.sql.functions import current_timestamp, lit
+from pyspark.sql.functions import col, current_timestamp
 
 # Pipeline parameter — set in the DLT pipeline configuration under raw_data_path.
 raw_path = spark.conf.get("raw_data_path", "/Volumes/workspace/clickstream_workshop/raw")
 
 
-def _read_csv(filename: str):
-    """Read a CSV from the raw volume. All columns land as strings (inferSchema=false)."""
+def _read_csv(name: str):
+    """Stream new CSV files from the raw volume using Auto Loader. Each dataset lives in its own subdirectory."""
     return (
-        spark.read.format("csv")
+        spark.readStream.format("cloudFiles")
+        .option("cloudFiles.format", "csv")
         .option("header", "true")
-        .option("inferSchema", "false")
+        .option("cloudFiles.inferColumnTypes", "false")
         .option("nullValue", "")
-        .load(f"{raw_path}/{filename}")
-        .withColumn("_source_file", lit(filename))
+        .load(f"{raw_path}/{name}")
+        .withColumn("_source_file", col("_metadata.file_path"))
         .withColumn("_ingested_at", current_timestamp())
     )
 
@@ -57,7 +59,7 @@ def _read_csv(filename: str):
     table_properties={"quality": "bronze"},
 )
 def bronze_search_events():
-    return _read_csv("search_events.csv")
+    return _read_csv("search_events")
 
 # COMMAND ----------
 
@@ -67,7 +69,7 @@ def bronze_search_events():
     table_properties={"quality": "bronze"},
 )
 def bronze_impression_events():
-    return _read_csv("impression_events.csv")
+    return _read_csv("impression_events")
 
 # COMMAND ----------
 
@@ -77,7 +79,7 @@ def bronze_impression_events():
     table_properties={"quality": "bronze"},
 )
 def bronze_click_events():
-    return _read_csv("click_events.csv")
+    return _read_csv("click_events")
 
 # COMMAND ----------
 
@@ -87,7 +89,7 @@ def bronze_click_events():
     table_properties={"quality": "bronze"},
 )
 def bronze_job_openings():
-    return _read_csv("job_openings.csv")
+    return _read_csv("job_openings")
 
 # COMMAND ----------
 
@@ -97,7 +99,7 @@ def bronze_job_openings():
     table_properties={"quality": "bronze"},
 )
 def bronze_clients():
-    return _read_csv("clients.csv")
+    return _read_csv("clients")
 
 # COMMAND ----------
 
@@ -107,10 +109,10 @@ def bronze_clients():
     table_properties={"quality": "bronze"},
 )
 def bronze_freelancers():
-    return _read_csv("freelancers.csv")
+    return _read_csv("freelancers")
 
 # COMMAND ----------
 # MAGIC %md
 # MAGIC ---
-# MAGIC **Bronze complete.** Five tables land in the pipeline.
+# MAGIC **Bronze complete.** Six tables land in the pipeline.
 # MAGIC Open `silver.py` to see how we clean and validate them.

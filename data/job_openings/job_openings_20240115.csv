@@ -1,0 +1,36 @@
+opening_uid,title,category,budget_type,budget_amount,client_uid,posted_at,is_active
+~538977901705763689,Spark Developer for Big Data Project,Engineering & Architecture,hourly,95.67,CL_792374,2024-01-01T00:00:00.000+0000,True
+~791106233590490366,Cloud Data Architect - AWS,Data Science & Analytics,hourly,66.08,CL_849883,2023-12-16T00:00:00.000+0000,True
+~365474849911471421,React Frontend Developer Needed,IT & Networking,fixed,50,CL_279502,2023-12-22T00:00:00.000+0000,True
+~253620329726030318,React Frontend Developer Needed,Engineering & Architecture,hourly,40.76,CL_138862,2023-12-26T00:00:00.000+0000,True
+~199818191433716728,Machine Learning Platform Engineer,IT & Networking,hourly,102.67,CL_215125,2023-12-26T00:00:00.000+0000,True
+~940515544603651759,Data Platform Engineer - Snowflake dbt,IT & Networking,hourly,118.04,CL_279502,2024-01-06T00:00:00.000+0000,True
+~711985265972524932,Full Stack Developer - Node + React,Software Development,fixed,5000,CL_215125,2024-01-11T00:00:00.000+0000,True
+~907607906474056157,Data Engineer - Databricks Expert,Software Development,hourly,83.35,CL_596738,2024-01-03T00:00:00.000+0000,True
+~203574195218389338,DevOps Engineer - AWS Kubernetes,Engineering & Architecture,hourly,33.62,CL_474892,2024-01-01T00:00:00.000+0000,True
+~819330391008835362,Senior Python Developer for Data Pipeline,Software Development,hourly,71.13,CL_279502,2023-12-20T00:00:00.000+0000,True
+~329971088208109483,Backend Scala Developer - Fintech,Data Science & Analytics,fixed,500,CL_284573,2024-01-06T00:00:00.000+0000,True
+~932669438950018402,Cloud Data Architect - AWS,Data Science & Analytics,fixed,75,CL_268623,2024-01-05T00:00:00.000+0000,True
+~778387278128331331,Backend Scala Developer - Fintech,Engineering & Architecture,fixed,100,CL_883819,2023-12-20T00:00:00.000+0000,True
+~345100575194069253,Data Scientist - NLP Focus,Data Science & Analytics,hourly,85.26,CL_279502,2024-01-11T00:00:00.000+0000,True
+~632054008047310927,Spark Developer for Big Data Project,Software Development,hourly,102.51,CL_849883,2023-12-27T00:00:00.000+0000,True
+~306374057583245916,Scala/Spark Data Engineer - Remote,Software Development,fixed,1500,CL_627638,2023-12-17T00:00:00.000+0000,True
+~753608504712983352,Cloud Data Architect - AWS,Data Science & Analytics,hourly,54.01,CL_474892,2023-12-16T00:00:00.000+0000,True
+~195652715593206219,Data Engineer - Databricks Expert,IT & Networking,hourly,50.75,CL_326307,2024-01-09T00:00:00.000+0000,True
+~926275785385270041,Full Stack Developer - Node + React,Software Development,hourly,57.68,CL_326307,2023-12-19T00:00:00.000+0000,True
+~880963109817413971,Cloud Data Architect - AWS,Data Science & Analytics,fixed,150,CL_235412,2023-12-16T00:00:00.000+0000,True
+~201229071073273427,Machine Learning Platform Engineer,Data Science & Analytics,hourly,97.4,CL_627638,2024-01-05T00:00:00.000+0000,True
+~464759857793003888,Data Engineer - Databricks Expert,Software Development,fixed,500,CL_724340,2024-01-08T00:00:00.000+0000,True
+~149173799560693904,React Frontend Developer Needed,Software Development,hourly,100.97,CL_724340,2024-01-04T00:00:00.000+0000,True
+~743274789430450381,Scala/Spark Data Engineer - Remote,IT & Networking,fixed,1000,CL_474892,2024-01-02T00:00:00.000+0000,True
+~590229130566262526,React Frontend Developer Needed,Engineering & Architecture,hourly,86.4,CL_474892,2024-01-01T00:00:00.000+0000,True
+~517970305268049820,Machine Learning Platform Engineer,Engineering & Architecture,hourly,74.8,CL_153810,2023-12-20T00:00:00.000+0000,True
+~193174997044464337,Machine Learning Platform Engineer,Engineering & Architecture,fixed,50,CL_124435,2023-12-22T00:00:00.000+0000,True
+~697968477332656152,Data Platform Engineer - Snowflake dbt,Data Science & Analytics,hourly,72.41,CL_474892,2024-01-07T00:00:00.000+0000,True
+~328370574705313521,ML Engineer for Recommendation System,Engineering & Architecture,hourly,104.36,CL_326307,2023-12-31T00:00:00.000+0000,True
+~633457300363584877,Senior Python Developer for Data Pipeline,Software Development,hourly,33.18,CL_268623,2023-12-24T00:00:00.000+0000,True
+~170641372812259569,Python Developer Needed,Software Development,hourly,negotiable,CL_366966,2024-01-10T00:00:00.000+0000,True
+~768411067980353559,Data Engineer Spark,Data Science & Analytics,monthly,8000,CL_901321,2024-01-11T00:00:00.000+0000,True
+~271608422343356695,,Software Development,fixed,2000,CL_103376,2024-01-12T00:00:00.000+0000,True
+~841987056435286290,ML Engineer,Data Science & Analytics,fixed,-500,CL_137329,2024-01-13T00:00:00.000+0000,True
+~556355709177768954,Backend Developer,Engineering & Architecture,hourly,85,CL_567922,2025-06-01T00:00:00.000+0000,True

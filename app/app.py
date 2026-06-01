@@ -301,7 +301,7 @@ PAGE_TEMPLATE = """
       </div>
 
       <section class="section">
-        <h2 class="section-title">Upwork Sales Assistant</h2>
+        <h2 class="section-title">FlexHire Sales Assistant</h2>
         <div class="scenario-row">
           <button class="scenario-btn active" type="button" data-scenario="growth">Growth Pitch</button>
           <button class="scenario-btn" type="button" data-scenario="underperforming">Performance Recovery</button>

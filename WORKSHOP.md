@@ -6,6 +6,28 @@ Run modules in order. Later modules depend on objects created by earlier ones.
 
 ---
 
+## The Problem
+
+You are a data engineer at FlexHire, a freelance job marketplace. Every time a visitor searches for work, the platform records three types of events:
+
+| Event | What it captures | Grain |
+|-------|-----------------|-------|
+| `search_events.csv` | A visitor submitted a search query | Per search session |
+| `impression_events.csv` | A job listing was shown to a visitor | Per impression |
+| `click_events.csv` | A visitor clicked a job listing | Per click |
+
+These events form a **search funnel**: search → impressions → clicks. Three dimension tables describe the entities the events reference:
+
+| Dimension | What it captures | Grain |
+|-----------|-----------------|-------|
+| `job_openings.csv` | Job posting metadata | Per job |
+| `clients.csv` | Client company profiles | Per client |
+| `freelancers.csv` | Freelancer profiles | Per freelancer |
+
+The business wants to answer questions like: *Which job categories get the most clicks? Do featured listings outperform organic results? Which search queries drive the most traffic?* Your job is to build the pipeline that makes those questions answerable — and govern, surface, and serve the results.
+
+---
+
 ## Before You Start
 
 ```bash
@@ -16,7 +38,12 @@ echo "$WAREHOUSE_ID"
 
 ---
 
+## Session 1 — Build
+
+---
+
 ## Module 1 — Databricks Asset Bundles
+
 
 **Infrastructure-as-code for Databricks.** A bundle is a `databricks.yml` file that declares all resources — pipelines, dashboards, jobs, apps, storage — so the entire workshop environment can be deployed, destroyed, and reproduced from Git.
 
@@ -28,37 +55,20 @@ databricks bundle deploy  --target dev --var="warehouse_id=$WAREHOUSE_ID"
 databricks bundle summary --target dev --var="warehouse_id=$WAREHOUSE_ID"
 ```
 
+The bundle deploy creates the `workspace.clickstream_workshop` schema and a `raw` volume ready to receive the source data.
+
 ---
 
-## Module 2 — Unity Catalog
+## Module 2 — Pipelines and Medallion Architecture
 
-**Organizational hierarchy:** Account → Workspace → Metastore
-
-**Three-level namespace:** Catalog → Schema → Tables / Views / Volumes
-
-The bundle deploy created the `workspace.clickstream_workshop` schema and the `raw` volume. Upload the source CSVs before running the pipeline:
+**Upload the raw data into the volume created by the bundle:**
 
 ```bash
 databricks fs cp --recursive ./data/ \
   dbfs:/Volumes/workspace/clickstream_workshop/raw/ --overwrite
 ```
 
-**Datasets**
-
-| File | Description | Grain |
-|------|-------------|-------|
-| `search_events.csv` | A visitor submitted a search query | Per search session |
-| `impression_events.csv` | A job listing was shown to a visitor | Per impression |
-| `click_events.csv` | A visitor clicked a job listing | Per click |
-| `job_openings.csv` | Job posting metadata | Per job |
-| `clients.csv` | Client company profiles | Per client |
-| `freelancers.csv` | Freelancer profiles | Per freelancer |
-
-The event files form a funnel: search → impressions → clicks. `job_openings`, `clients`, and `freelancers` are dimension tables that describe the entities the events reference.
-
----
-
-## Module 3 — Pipelines and Medallion Architecture
+Each dataset lives in its own subdirectory (`search_events/`, `impression_events/`, `click_events/`, `job_openings/`, `clients/`, `freelancers/`). Auto Loader watches each directory independently so new files can be dropped per-dataset without affecting others.
 
 **Three layers with clear contracts:**
 
@@ -78,7 +88,7 @@ The **Run** dropdown has four options: Full refresh, Incremental, Select tables 
 
 ---
 
-## Module 4 — Data Quality and Expectations
+## Module 3 — Data Quality and Expectations
 
 **DLT expectations are declarative quality rules.** Three enforcement levels:
 
@@ -89,6 +99,10 @@ The **Run** dropdown has four options: Full refresh, Incremental, Select tables 
 | `@expect_or_fail` | Halt the entire pipeline |
 
 Open `src/dlt/silver.py` to see the expectations in context. In the pipeline UI, click a silver table → **Table Metrics** to see pass/fail/drop counts per rule.
+
+**The quarantine pattern** is a fourth option not covered by the decorators above: instead of dropping bad rows, route them to a separate table so they can be investigated and reprocessed once the source issue is fixed. `@expect_or_drop` is appropriate when bad rows are meaningless noise; the quarantine pattern is appropriate when bad rows have diagnostic or analytical value.
+
+Use case in this pipeline: `silver_click_events` drops bot traffic with `@expect_or_drop("no_bots", ...)`. Bot clicks aren't useful for CTR analysis, but they are useful for fraud monitoring and volume trending. `quarantine_click_events` reads the same bronze source and captures every row that silver would reject, tagging each with a `quarantine_reason` (`bot_traffic`, `null_event_id`, `invalid_position`). No data is lost — the two tables are complementary views of the same raw events.
 
 Render and deploy the quality dashboard:
 
@@ -101,7 +115,7 @@ databricks bundle deploy --target dev --var="warehouse_id=$WAREHOUSE_ID"
 
 ---
 
-## Module 5 — Data Modeling and Star Schema
+## Module 4 — Data Modeling and Star Schema
 
 **Two output shapes from the same pipeline:**
 
@@ -114,7 +128,17 @@ After the pipeline finishes, browse both sets of tables in the Catalog Explorer.
 
 ---
 
-## Module 6 — Unity Catalog Governance
+## Session 2 — Model & Govern
+
+---
+
+## Module 5 — Unity Catalog
+
+**Organizational hierarchy:** Account → Workspace → Metastore
+
+**Three-level namespace:** Catalog → Schema → Tables / Views / Volumes
+
+Unity Catalog centralises access control, lineage, and data discovery across all workspaces in your account. Every object the pipeline wrote — tables, views, volumes — lives in this hierarchy and is governed from here.
 
 **Lock down the data before building the analytics layer on top of it.** Unity Catalog provides column masking, row filters, RBAC grants, data tags, and end-to-end lineage — all managed at the catalog level. Govern the pipeline output now so every downstream consumer (metric views, dashboards, Genie, Apps) inherits the same access controls.
 
@@ -122,7 +146,11 @@ Open `src/sql/governance.sql` in the Databricks SQL editor and work through the 
 
 ---
 
-## Module 7 — Metric Views: Semantic Layer
+## Session 3 — Surface
+
+---
+
+## Module 6 — Metric Views: Semantic Layer
 
 **A semantic layer decouples business KPIs from query patterns.** Each metric view declares measures and dimensions in YAML — the query engine generates SQL dynamically, so the same view answers `CTR by category` and `CTR by day` without writing two queries.
 
@@ -138,11 +166,11 @@ FROM workspace.clickstream_workshop.mv_category_performance
 GROUP BY category
 ```
 
-Metric view definitions: `src/sql/metric_views.sql`
+Metric view definitions: `src/metric_views/`
 
 ---
 
-## Module 8 — Dashboards
+## Module 7 — Dashboards
 
 Three dashboards ship with the workshop:
 
@@ -159,7 +187,7 @@ databricks bundle summary --target dev --var="warehouse_id=$WAREHOUSE_ID" -o jso
 
 ---
 
-## Module 9 — Genie: Natural Language Exploration
+## Module 8 — Genie: Natural Language Exploration
 
 **Genie turns natural language into SQL.** Users ask questions in plain English; Genie generates and runs the query against the semantic layer (star schema + metric views).
 
@@ -174,7 +202,7 @@ Try asking questions like:
 
 ---
 
-## Module 10 — Databricks Apps
+## Module 9 — Databricks Apps
 
 **Package dashboards and Genie into a guided experience for non-technical users.** The app in this workshop is a sales call workspace: pick a client, see their performance benchmarks, and ask Genie a contextual question — all in one screen.
 
@@ -219,4 +247,3 @@ App source: `app/app.py`
 ```bash
 databricks bundle destroy --target dev --var="warehouse_id=$WAREHOUSE_ID"
 ```
-

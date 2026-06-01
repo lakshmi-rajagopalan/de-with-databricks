@@ -19,14 +19,16 @@
 # MAGIC
 # MAGIC **DLT concepts covered:**
 # MAGIC - `@dp.expect`, `@dp.expect_or_drop`, `@dp.expect_or_fail`
-# MAGIC - `dp.read()` to reference upstream tables in the same pipeline
+# MAGIC - Quarantine pattern — routing rejects to a separate table instead of dropping them
+# MAGIC - `dp.create_auto_cdc_flow()` for SCD Type 1 upserts (`silver_job_openings`)
+# MAGIC - `dp.read_stream()` to consume bronze tables as streaming sources
 # MAGIC - `regexp_extract` / conditional casting to parse mixed-type columns
 
 # COMMAND ----------
 
 from pyspark import pipelines as dp
 from pyspark.sql.functions import (
-    col, to_timestamp, trim, when, regexp_extract, current_timestamp,
+    col, to_timestamp, trim, when, regexp_extract, current_timestamp, lit,
 )
 from pyspark.sql.types import IntegerType, DoubleType, BooleanType
 
@@ -51,7 +53,7 @@ from pyspark.sql.types import IntegerType, DoubleType, BooleanType
 @dp.expect_or_drop("valid_position", "position > 0")
 def silver_impression_events():
     return (
-        dp.read("bronze_impression_events")
+        dp.read_stream("bronze_impression_events")
         .select(
             col("event_id"),
             col("visitor_id"),
@@ -84,7 +86,7 @@ def silver_impression_events():
 @dp.expect("reasonable_event_ts", "event_ts <= current_timestamp()")
 def silver_search_events():
     return (
-        dp.read("bronze_search_events")
+        dp.read_stream("bronze_search_events")
         .select(
             col("search_guid"),
             col("visitor_id"),
@@ -137,7 +139,7 @@ def silver_click_events():
     )
 
     return (
-        dp.read("bronze_click_events")
+        dp.read_stream("bronze_click_events")
         .select(
             col("event_id"),
             col("visitor_id"),
@@ -154,9 +156,60 @@ def silver_click_events():
 
 # COMMAND ----------
 # MAGIC %md
+# MAGIC ## quarantine_click_events
+# MAGIC
+# MAGIC The quarantine pattern is an alternative to `@expect_or_drop`: instead of silently
+# MAGIC discarding bad rows, route them to a separate table so they can be investigated
+# MAGIC and reprocessed after the source issue is fixed.
+# MAGIC
+# MAGIC This table captures every click event that `silver_click_events` would reject,
+# MAGIC reading directly from bronze so no data is lost. The most common reason is bot
+# MAGIC traffic — which is analytically useful on its own for fraud monitoring.
+# MAGIC
+# MAGIC | Quarantine reason | Silver rule it mirrors |
+# MAGIC |-------------------|----------------------|
+# MAGIC | `bot_traffic` | `no_bots` (`@expect_or_drop`) |
+# MAGIC | `null_event_id` | `event_id_not_null` (`@expect_or_drop`) |
+# MAGIC | `invalid_position` | `valid_position` (`@expect_or_drop`) |
+
+# COMMAND ----------
+
+@dp.table(
+    name="quarantine_click_events",
+    comment="Click events rejected by silver quality rules — preserved for investigation and reprocessing",
+    table_properties={"quality": "quarantine"},
+)
+def quarantine_click_events():
+    position_int = col("position").cast("int")
+    return (
+        dp.read_stream("bronze_click_events")
+        .where(
+            col("event_id").isNull()
+            | (col("is_bot") == "True")
+            | position_int.isNull()
+            | (position_int <= 0)
+        )
+        .withColumn(
+            "quarantine_reason",
+            when(col("event_id").isNull(), lit("null_event_id"))
+            .when(col("is_bot") == "True", lit("bot_traffic"))
+            .otherwise(lit("invalid_position")),
+        )
+        .withColumn("quarantined_at", current_timestamp())
+    )
+
+# COMMAND ----------
+# MAGIC %md
 # MAGIC ## silver_job_openings
 # MAGIC
-# MAGIC `budget_amount` has two issues handled here:
+# MAGIC Uses `dp.apply_changes()` to maintain an SCD Type 1 table keyed on `opening_uid`.
+# MAGIC When a job is updated (status change, budget edit), the row with the latest `posted_at`
+# MAGIC wins — older versions are overwritten, not tracked.
+# MAGIC
+# MAGIC The source view `job_openings_cdc` handles type casting and budget parsing.
+# MAGIC Quality rules on the source view handle type safety; `create_auto_cdc_flow` manages the upsert.
+# MAGIC
+# MAGIC `budget_amount` parsing:
 # MAGIC
 # MAGIC | Raw value | Treatment |
 # MAGIC |-----------|-----------|
@@ -168,18 +221,8 @@ def silver_click_events():
 
 # COMMAND ----------
 
-@dp.table(
-    name="silver_job_openings",
-    comment="Job openings — typed, title-validated, with safe budget parsing",
-    table_properties={"quality": "silver"},
-)
-@dp.expect_or_fail("opening_uid_not_null", "opening_uid IS NOT NULL")
-@dp.expect_or_drop("title_not_null", "title IS NOT NULL AND title != ''")
-@dp.expect("positive_budget", "budget_amount IS NULL OR budget_amount > 0")
-@dp.expect("reasonable_posted_at", "posted_at <= current_timestamp()")
-@dp.expect("known_budget_type", "budget_type IN ('hourly', 'fixed', 'monthly', 'negotiable')")
-def silver_job_openings():
-    # Parse budget_amount: treat any non-numeric string as null
+@dp.view(name="job_openings_cdc")
+def job_openings_cdc():
     numeric_budget = (
         when(
             regexp_extract(col("budget_amount"), r"^-?\d+(\.\d+)?$", 0) != "",
@@ -188,7 +231,7 @@ def silver_job_openings():
     )
 
     return (
-        dp.read("bronze_job_openings")
+        dp.read_stream("bronze_job_openings")
         .select(
             col("opening_uid"),
             trim(col("title")).alias("title"),
@@ -200,6 +243,23 @@ def silver_job_openings():
             when(col("is_active") == "True", True).otherwise(False).alias("is_active"),
         )
     )
+
+# Create the target streaming table first (required for Auto CDC)
+dp.create_streaming_table(
+    name="silver_job_openings",
+    comment="Job openings — typed, title-validated, with safe budget parsing",
+    table_properties={"quality": "silver"},
+)
+
+# create_auto_cdc_flow maintains silver_job_openings as SCD Type 1 keyed on opening_uid.
+# When a job is updated (status change, budget edit), the latest posted_at wins.
+dp.create_auto_cdc_flow(
+    target="silver_job_openings",
+    source="job_openings_cdc",
+    keys=["opening_uid"],
+    sequence_by="posted_at",
+    stored_as_scd_type=1,
+)
 
 # COMMAND ----------
 # MAGIC %md
@@ -246,7 +306,7 @@ def silver_clients():
     )
 
     return (
-        dp.read("bronze_clients")
+        dp.read_stream("bronze_clients")
         .select(
             col("client_uid"),
             trim(col("company_name")).alias("company_name"),
@@ -305,7 +365,7 @@ def silver_freelancers():
     )
 
     return (
-        dp.read("bronze_freelancers")
+        dp.read_stream("bronze_freelancers")
         .select(
             col("visitor_id"),
             trim(col("name")).alias("name"),

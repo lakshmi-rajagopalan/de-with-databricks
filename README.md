@@ -1,6 +1,6 @@
-# Upwork Clickstream - Data Engineering Workshop
+# FlexHire Clickstream - Data Engineering Workshop
 
-A hands-on Databricks workshop built on Upwork job marketplace clickstream data — job impressions, click events, and job opening metadata.
+A hands-on Databricks workshop built on FlexHire job marketplace clickstream data — job impressions, click events, and job opening metadata.
 
 Covers the full data engineering stack: ingestion, medallion pipelines, data quality, semantic layer, dashboards, Genie, governed access, and a business-facing app.
 
@@ -61,18 +61,6 @@ databricks auth login --host https://<your-workspace>.cloud.databricks.com
 
 ---
 
-## Deploy
-
-```bash
-export WAREHOUSE_ID=$(databricks warehouses list -o json \
-  | jq -r '.[] | select(.name=="Serverless Starter Warehouse") | .id' | head -n1)
-
-databricks bundle deploy --target dev --var="warehouse_id=$WAREHOUSE_ID"
-```
-
-See [WORKSHOP.md](WORKSHOP.md) for per-module commands and what to run in what order.
-
----
 
 ## Learning Objectives
 

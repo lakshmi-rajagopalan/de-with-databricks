@@ -5,7 +5,7 @@
 # MAGIC # Gold Layer — Business Metrics
 # MAGIC
 # MAGIC **Purpose:** Produce aggregated, denormalised tables optimised for dashboards and reporting.
-# MAGIC Each gold table answers a specific product analytics question about the Upwork job marketplace.
+# MAGIC Each gold table answers a specific product analytics question about the FlexHire job marketplace.
 # MAGIC
 # MAGIC | Table | Business question |
 # MAGIC |-------|------------------|
@@ -17,6 +17,7 @@
 # MAGIC | `gold_daily_metrics` | What does the day-by-day search funnel look like? |
 # MAGIC
 # MAGIC **DLT concepts covered:**
+# MAGIC - `@dp.materialized_view` for pure aggregations (fully derived, auto-refreshed)
 # MAGIC - `dp.read()` to join across silver tables in the same pipeline
 # MAGIC - CTR funnel (impressions → clicks)
 # MAGIC - Window functions for ranking within groups
@@ -42,7 +43,7 @@ from pyspark.sql.functions import (
 
 # COMMAND ----------
 
-@dp.table(
+@dp.materialized_view(
     name="gold_job_performance",
     comment="Per-job funnel: impressions, clicks, CTR and average position",
     table_properties={"quality": "gold"},
@@ -111,7 +112,7 @@ def gold_job_performance():
 
 # COMMAND ----------
 
-@dp.table(
+@dp.materialized_view(
     name="gold_search_query_performance",
     comment="Per-query funnel: impressions, clicks and CTR for each search term",
     table_properties={"quality": "gold"},
@@ -165,7 +166,7 @@ def gold_search_query_performance():
 
 # COMMAND ----------
 
-@dp.table(
+@dp.materialized_view(
     name="gold_position_ctr",
     comment="CTR by search result position — used to analyse and correct for position bias",
     table_properties={"quality": "gold"},
@@ -206,7 +207,7 @@ def gold_position_ctr():
 
 # COMMAND ----------
 
-@dp.table(
+@dp.materialized_view(
     name="gold_category_performance",
     comment="Job category rollup: job count, impressions, clicks, CTR and average budget",
     table_properties={"quality": "gold"},
@@ -266,7 +267,7 @@ def gold_category_performance():
 
 # COMMAND ----------
 
-@dp.table(
+@dp.materialized_view(
     name="gold_sublocation_performance",
     comment="Sublocation comparison: search_results vs featured_jobs CTR and engagement",
     table_properties={"quality": "gold"},
@@ -329,7 +330,7 @@ def gold_sublocation_performance():
 
 # COMMAND ----------
 
-@dp.table(
+@dp.materialized_view(
     name="gold_daily_metrics",
     comment="Daily search funnel trend: impressions, clicks, CTR and unique visitor counts",
     table_properties={"quality": "gold"},
