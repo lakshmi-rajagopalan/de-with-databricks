@@ -12,7 +12,7 @@ For step-by-step workshop instructions, see [WORKSHOP.md](WORKSHOP.md).
 
 ```
 GitHub repo (data/*.csv + src/)
-  → Unity Catalog volume  (workspace.clickstream_workshop.raw)
+  → Unity Catalog volume  (flexhire.clickstream_workshop.raw)
   → DLT pipeline          (bronze → silver → gold + star schema)
   → Semantic layer        (metric views + report views)
   → Dashboards + Genie + App

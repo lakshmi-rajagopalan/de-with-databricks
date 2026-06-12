@@ -432,7 +432,7 @@ def api_clients():
         resp = w.statement_execution.execute_statement(
             statement=(
                 "SELECT client_uid, company_name "
-                "FROM workspace.clickstream_workshop.silver_clients "
+                "FROM flexhire.clickstream_workshop.silver_clients "
                 "ORDER BY company_name"
             ),
             warehouse_id=warehouse_id,

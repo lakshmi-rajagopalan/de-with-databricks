@@ -6,8 +6,7 @@ include:
 
 variables:
   catalog_name:
-    description: Unity Catalog catalog for the DLT pipeline (uses workspace default catalog).
-    default: workspace
+    description: Unity Catalog catalog for the DLT pipeline.
   schema_name:
     description: Unity Catalog schema used as DLT target (created by the bundle).
     default: clickstream_workshop

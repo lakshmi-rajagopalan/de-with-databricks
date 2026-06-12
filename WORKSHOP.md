@@ -31,9 +31,13 @@ The business wants to answer questions like: *Which job categories get the most 
 ## Before You Start
 
 ```bash
-export WAREHOUSE_ID=$(databricks warehouses list -o json \
+export DATABRICKS_CONFIG_PROFILE=flexhire-clickstream
+
+export BUNDLE_VAR_warehouse_id=$(databricks warehouses list -o json \
   | jq -r '.[] | select(.name=="Serverless Starter Warehouse") | .id' | head -n1)
-echo "$WAREHOUSE_ID"
+echo "$BUNDLE_VAR_warehouse_id"
+
+export BUNDLE_VAR_catalog_name=flexhire
 ```
 
 ---
@@ -50,12 +54,12 @@ echo "$WAREHOUSE_ID"
 Key files: `databricks.yml`, `resources/`
 
 ```bash
-databricks bundle validate --target dev --var="warehouse_id=$WAREHOUSE_ID"
-databricks bundle deploy  --target dev --var="warehouse_id=$WAREHOUSE_ID"
-databricks bundle summary --target dev --var="warehouse_id=$WAREHOUSE_ID"
+databricks bundle validate
+databricks bundle deploy
+databricks bundle summary
 ```
 
-The bundle deploy creates the `workspace.clickstream_workshop` schema and a `raw` volume ready to receive the source data.
+The bundle deploy creates the `flexhire.clickstream_workshop` schema and a `raw` volume ready to receive the source data.
 
 ---
 
@@ -65,7 +69,7 @@ The bundle deploy creates the `workspace.clickstream_workshop` schema and a `raw
 
 ```bash
 databricks fs cp --recursive ./data/ \
-  dbfs:/Volumes/workspace/clickstream_workshop/raw/ --overwrite
+  dbfs:/Volumes/flexhire/clickstream_workshop/raw/ --overwrite
 ```
 
 Each dataset lives in its own subdirectory (`search_events/`, `impression_events/`, `click_events/`, `job_openings/`, `clients/`, `freelancers/`). Auto Loader watches each directory independently so new files can be dropped per-dataset without affecting others.
@@ -79,7 +83,7 @@ Each dataset lives in its own subdirectory (`search_events/`, `impression_events
 | Gold | Pre-aggregated metrics ready for dashboards |
 
 ```bash
-databricks bundle run --target dev --var="warehouse_id=$WAREHOUSE_ID" clickstream_workshop
+databricks bundle run clickstream_workshop
 ```
 
 While the pipeline runs, explore the **Pipeline Settings** panel: pipeline mode (triggered vs continuous), source code, target catalog location, compute, configurations, and notification settings. The **Schedule** tab shows how pipelines can be triggered on a cron schedule.
@@ -110,7 +114,7 @@ Render and deploy the quality dashboard:
 export PIPELINE_ID=$(databricks pipelines list-pipelines -o json \
   | jq -r '.[] | select(.name | test("clickstream-workshop")) | .pipeline_id' | head -n1)
 ./scripts/render_quality_dashboard.sh "$PIPELINE_ID"
-databricks bundle deploy --target dev --var="warehouse_id=$WAREHOUSE_ID"
+databricks bundle deploy
 ```
 
 ---
@@ -155,14 +159,14 @@ Open `src/sql/governance.sql` in the Databricks SQL editor and work through the 
 **A semantic layer decouples business KPIs from query patterns.** Each metric view declares measures and dimensions in YAML — the query engine generates SQL dynamically, so the same view answers `CTR by category` and `CTR by day` without writing two queries.
 
 ```bash
-databricks bundle run --target dev --var="warehouse_id=$WAREHOUSE_ID" metric_views
+databricks bundle run metric_views
 ```
 
 To query a metric view, wrap measures in `Measure()`:
 
 ```sql
 SELECT category, Measure(ctr)
-FROM workspace.clickstream_workshop.mv_category_performance
+FROM flexhire.clickstream_workshop.mv_category_performance
 GROUP BY category
 ```
 
@@ -181,7 +185,7 @@ Three dashboards ship with the workshop:
 | Client Demand Intelligence | Sales / account managers | Star schema + report views |
 
 ```bash
-databricks bundle summary --target dev --var="warehouse_id=$WAREHOUSE_ID" -o json \
+databricks bundle summary -o json \
   | jq -r '.resources.dashboards | to_entries[] | "\(.key): \(.value.url)"'
 ```
 
@@ -207,7 +211,7 @@ Try asking questions like:
 **Package dashboards and Genie into a guided experience for non-technical users.** The app in this workshop is a sales call workspace: pick a client, see their performance benchmarks, and ask Genie a contextual question — all in one screen.
 
 ```bash
-databricks bundle run --target dev --var="warehouse_id=$WAREHOUSE_ID" client_demand_app
+databricks bundle run client_demand_app
 ```
 
 The app runs under a dedicated service principal that needs explicit access to the data and the Genie space. After the app starts, find its SP ID and grant permissions:
@@ -223,9 +227,9 @@ echo $SP_ID
 
 ```sql
 -- 2. Run in Databricks SQL editor — replace <SP_ID> with the value above
-GRANT USE CATALOG ON CATALOG workspace                      TO `<SP_ID>`;
-GRANT USE SCHEMA  ON SCHEMA  workspace.clickstream_workshop TO `<SP_ID>`;
-GRANT SELECT      ON SCHEMA  workspace.clickstream_workshop TO `<SP_ID>`;
+GRANT USE CATALOG ON CATALOG flexhire                      TO `<SP_ID>`;
+GRANT USE SCHEMA  ON SCHEMA  flexhire.clickstream_workshop TO `<SP_ID>`;
+GRANT SELECT      ON SCHEMA  flexhire.clickstream_workshop TO `<SP_ID>`;
 ```
 
 **3. Grant Genie space access via API** — the Genie space lives in `/Shared`, so its ACL can be managed programmatically:
@@ -245,5 +249,5 @@ App source: `app/app.py`
 ## Teardown
 
 ```bash
-databricks bundle destroy --target dev --var="warehouse_id=$WAREHOUSE_ID"
+databricks bundle destroy
 ```
