@@ -202,7 +202,7 @@ def quarantine_click_events():
 # MAGIC %md
 # MAGIC ## silver_job_openings
 # MAGIC
-# MAGIC Uses `dp.apply_changes()` to maintain an SCD Type 1 table keyed on `opening_uid`.
+# MAGIC Uses `dp.create_auto_cdc_flow()` to maintain an SCD Type 1 table keyed on `opening_uid`.
 # MAGIC When a job is updated (status change, budget edit), the row with the latest `posted_at`
 # MAGIC wins — older versions are overwritten, not tracked.
 # MAGIC
@@ -382,5 +382,5 @@ def silver_freelancers():
 # COMMAND ----------
 # MAGIC %md
 # MAGIC ---
-# MAGIC **Silver complete.** Five validated tables are ready for aggregation.
+# MAGIC **Silver complete.** Six validated tables are ready for aggregation.
 # MAGIC Open `gold.py` to build the business-facing metrics layer.

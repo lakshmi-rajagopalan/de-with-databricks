@@ -115,6 +115,10 @@ databricks bundle deploy --target dev --var="warehouse_id=$WAREHOUSE_ID"
 
 ---
 
+## Session 2 — Model & Govern
+
+---
+
 ## Module 4 — Data Modeling and Star Schema
 
 **Two output shapes from the same pipeline:**
@@ -125,10 +129,6 @@ databricks bundle deploy --target dev --var="warehouse_id=$WAREHOUSE_ID"
 | Star schema | `fact_search_events` + `dim_job`, `dim_client`, `dim_freelancer`, `dim_category`, `dim_date` | Flexible analytics — any slice, any grouping |
 
 After the pipeline finishes, browse both sets of tables in the Catalog Explorer.
-
----
-
-## Session 2 — Model & Govern
 
 ---
 
