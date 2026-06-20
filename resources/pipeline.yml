@@ -1,13 +1,13 @@
 resources:
   pipelines:
-    clickstream_workshop:
-      name: clickstream-workshop
+    clickstream:
+      name: clickstream
       catalog: ${var.catalog_name}
-      target: ${resources.schemas.workshop.name}
+      target: ${resources.schemas.raw.name}
       channel: CURRENT
       serverless: true
       configuration:
-        raw_data_path: /Volumes/${var.catalog_name}/${resources.schemas.workshop.name}/${resources.volumes.raw.name}
+        raw_data_path: /Volumes/${var.catalog_name}/${resources.schemas.raw.name}/${resources.volumes.landing.name}
       libraries:
         - notebook:
             path: ../src/dlt/bronze.py

@@ -1,14 +1,26 @@
 resources:
   schemas:
-    workshop:
+    raw:
       catalog_name: ${var.catalog_name}
-      name: ${var.schema_name}
-      comment: Schema for the clickstream workshop datasets (DLT target).
+      name: raw
+      comment: Landing zone schema for raw ingested data.
+    bronze:
+      catalog_name: ${var.catalog_name}
+      name: bronze
+      comment: Bronze layer — parsed and validated data.
+    silver:
+      catalog_name: ${var.catalog_name}
+      name: silver
+      comment: Silver layer — cleaned and enriched data.
+    gold:
+      catalog_name: ${var.catalog_name}
+      name: gold
+      comment: Gold layer — aggregated and business-ready data.
 
   volumes:
     raw:
       catalog_name: ${var.catalog_name}
-      schema_name: ${resources.schemas.workshop.name}
-      name: raw
+      schema_name: ${resources.schemas.raw.name}
+      name: landing
       volume_type: MANAGED
       comment: Landing zone for raw CSV files consumed by the DLT pipeline.

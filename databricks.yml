@@ -19,5 +19,7 @@ variables:
 targets:
   dev:
     default: true
+    variables:
+      catalog_name: clickstream_workshop_dev
     workspace:
       root_path: /Workspace/Users/${workspace.current_user.userName}/.bundle/${bundle.name}/${bundle.target}

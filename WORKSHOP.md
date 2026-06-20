@@ -59,7 +59,7 @@ databricks bundle deploy
 databricks bundle summary
 ```
 
-The bundle deploy creates the `flexhire.clickstream_workshop` schema and a `raw` volume ready to receive the source data.
+The bundle deploy creates four schemas (`raw`, `bronze`, `silver`, `gold`) and a `landing` volume under `raw` ready to receive the source data.
 
 ---
 
@@ -69,7 +69,7 @@ The bundle deploy creates the `flexhire.clickstream_workshop` schema and a `raw`
 
 ```bash
 databricks fs cp --recursive ./data/ \
-  dbfs:/Volumes/flexhire/clickstream_workshop/raw/ --overwrite
+  dbfs:/Volumes/{catalog_name}/raw/landing/ --overwrite
 ```
 
 Each dataset lives in its own subdirectory (`search_events/`, `impression_events/`, `click_events/`, `job_openings/`, `clients/`, `freelancers/`). Auto Loader watches each directory independently so new files can be dropped per-dataset without affecting others.
@@ -83,7 +83,7 @@ Each dataset lives in its own subdirectory (`search_events/`, `impression_events
 | Gold | Pre-aggregated metrics ready for dashboards |
 
 ```bash
-databricks bundle run clickstream_workshop
+databricks bundle run clickstream
 ```
 
 While the pipeline runs, explore the **Pipeline Settings** panel: pipeline mode (triggered vs continuous), source code, target catalog location, compute, configurations, and notification settings. The **Schedule** tab shows how pipelines can be triggered on a cron schedule.
@@ -112,7 +112,7 @@ Render and deploy the quality dashboard:
 
 ```bash
 export PIPELINE_ID=$(databricks pipelines list-pipelines -o json \
-  | jq -r '.[] | select(.name | test("clickstream-workshop")) | .pipeline_id' | head -n1)
+  | jq -r '.[] | select(.name | test("clickstream")) | .pipeline_id' | head -n1)
 ./scripts/render_quality_dashboard.sh "$PIPELINE_ID"
 databricks bundle deploy
 ```
@@ -166,7 +166,7 @@ To query a metric view, wrap measures in `Measure()`:
 
 ```sql
 SELECT category, Measure(ctr)
-FROM flexhire.clickstream_workshop.mv_category_performance
+FROM {catalog_name}.gold.mv_category_performance
 GROUP BY category
 ```
 
@@ -228,8 +228,8 @@ echo $SP_ID
 ```sql
 -- 2. Run in Databricks SQL editor — replace <SP_ID> with the value above
 GRANT USE CATALOG ON CATALOG flexhire                      TO `<SP_ID>`;
-GRANT USE SCHEMA  ON SCHEMA  flexhire.clickstream_workshop TO `<SP_ID>`;
-GRANT SELECT      ON SCHEMA  flexhire.clickstream_workshop TO `<SP_ID>`;
+GRANT USE SCHEMA  ON SCHEMA  {catalog_name}.gold TO `<SP_ID>`;
+GRANT SELECT      ON SCHEMA  {catalog_name}.gold TO `<SP_ID>`;
 ```
 
 **3. Grant Genie space access via API** — the Genie space lives in `/Shared`, so its ACL can be managed programmatically:

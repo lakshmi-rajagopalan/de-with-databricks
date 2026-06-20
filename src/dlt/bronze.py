@@ -8,9 +8,9 @@
 # MAGIC Bronze tables are the permanent record of what arrived, we never delete or modify them.
 # MAGIC
 # MAGIC **Layer contract:**
-# MAGIC - All columns ingested as strings to preserve the original values exactly
+# MAGIC - Columns ingested with inferred types; unexpected or mismatched columns rescued into `_rescued_data`
 # MAGIC - Two metadata columns added to every table: `_source_file` and `_ingested_at`
-# MAGIC - No filtering, no type casting, no business logic
+# MAGIC - No filtering, no business logic
 # MAGIC
 # MAGIC **Source files:**
 # MAGIC
@@ -44,7 +44,8 @@ def _read_csv(name: str):
         spark.readStream.format("cloudFiles")
         .option("cloudFiles.format", "csv")
         .option("header", "true")
-        .option("cloudFiles.inferColumnTypes", "false")
+        .option("cloudFiles.inferColumnTypes", "true")
+        .option("cloudFiles.schemaEvolutionMode", "rescue")
         .option("nullValue", "")
         .load(f"{raw_path}/{name}")
         .withColumn("_source_file", col("_metadata.file_path"))
@@ -54,7 +55,7 @@ def _read_csv(name: str):
 # COMMAND ----------
 
 @dp.table(
-    name="bronze_search_events",
+    name="bronze.search_events",
     comment="Raw search session events — one row per search with query context",
     table_properties={"quality": "bronze"},
 )
@@ -64,7 +65,7 @@ def bronze_search_events():
 # COMMAND ----------
 
 @dp.table(
-    name="bronze_impression_events",
+    name="bronze.impression_events",
     comment="Raw impression events — every job listing shown to a visitor",
     table_properties={"quality": "bronze"},
 )
@@ -74,7 +75,7 @@ def bronze_impression_events():
 # COMMAND ----------
 
 @dp.table(
-    name="bronze_click_events",
+    name="bronze.click_events",
     comment="Raw click events — every visitor click on a job listing",
     table_properties={"quality": "bronze"},
 )
@@ -84,7 +85,7 @@ def bronze_click_events():
 # COMMAND ----------
 
 @dp.table(
-    name="bronze_job_openings",
+    name="bronze.job_openings",
     comment="Raw job opening metadata posted by clients",
     table_properties={"quality": "bronze"},
 )
@@ -94,7 +95,7 @@ def bronze_job_openings():
 # COMMAND ----------
 
 @dp.table(
-    name="bronze_clients",
+    name="bronze.clients",
     comment="Raw client company profiles",
     table_properties={"quality": "bronze"},
 )
@@ -104,7 +105,7 @@ def bronze_clients():
 # COMMAND ----------
 
 @dp.table(
-    name="bronze_freelancers",
+    name="bronze.freelancers",
     comment="Raw freelancer profiles linked to event data via visitor_id",
     table_properties={"quality": "bronze"},
 )
