@@ -35,7 +35,7 @@ from pyspark import pipelines as dp
 from pyspark.sql.functions import col, current_timestamp
 
 # Pipeline parameter — set in the DLT pipeline configuration under raw_data_path.
-raw_path = spark.conf.get("raw_data_path", "/Volumes/flexhire/clickstream_workshop/raw")
+raw_path = spark.conf.get("raw_data_path", "/Volumes/clickstream_dev/raw/landing")
 
 
 def _read_csv(name: str):

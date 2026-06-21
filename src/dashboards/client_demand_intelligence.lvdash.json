@@ -3,32 +3,32 @@
     {
       "name": "client_portfolio_overview",
       "displayName": "1 · Client Portfolio Overview",
-      "query": "SELECT MEASURE(clients_tracked) AS clients_tracked, MEASURE(jobs_posted) AS total_jobs_posted, MEASURE(total_impressions) AS total_impressions, MEASURE(ctr_pct) AS avg_ctr_pct FROM flexhire.clickstream_workshop.mv_client_portfolio"
+      "query": "SELECT MEASURE(clients_tracked) AS clients_tracked, MEASURE(jobs_posted) AS total_jobs_posted, MEASURE(total_impressions) AS total_impressions, MEASURE(ctr_pct) AS avg_ctr_pct FROM clickstream_dev.gold.mv_client_portfolio"
     },
     {
       "name": "top_client_accounts",
       "displayName": "2 · Top Client Accounts",
-      "query": "SELECT company_name, MEASURE(active_jobs) AS active_jobs, MEASURE(total_impressions) AS total_impressions, MEASURE(total_clicks) AS total_clicks, MEASURE(ctr_pct) AS ctr_pct, MEASURE(avg_budget_amount) AS avg_budget_amount, MEASURE(unique_categories) AS unique_categories FROM flexhire.clickstream_workshop.mv_client_portfolio GROUP BY company_name ORDER BY total_impressions DESC LIMIT 15"
+      "query": "SELECT company_name, MEASURE(active_jobs) AS active_jobs, MEASURE(total_impressions) AS total_impressions, MEASURE(total_clicks) AS total_clicks, MEASURE(ctr_pct) AS ctr_pct, MEASURE(avg_budget_amount) AS avg_budget_amount, MEASURE(unique_categories) AS unique_categories FROM clickstream_dev.gold.mv_client_portfolio GROUP BY company_name ORDER BY total_impressions DESC LIMIT 15"
     },
     {
       "name": "client_posting_watchlist",
       "displayName": "3 · Posting Watchlist",
-      "query": "SELECT company_name, title, category, impressions, clicks, ctr_pct, opportunity_segment, recommended_action FROM flexhire.clickstream_workshop.client_posting_performance WHERE is_active ORDER BY impressions DESC, ctr_pct ASC LIMIT 20"
+      "query": "SELECT company_name, title, category, impressions, clicks, ctr_pct, opportunity_segment, recommended_action FROM clickstream_dev.gold.client_posting_performance WHERE is_active ORDER BY impressions DESC, ctr_pct ASC LIMIT 20"
     },
     {
       "name": "client_category_benchmark",
       "displayName": "4 · Category Benchmark",
-      "query": "SELECT company_name, category, client_active_jobs, client_impressions, client_ctr_pct, marketplace_ctr_pct, ctr_gap_pct, client_avg_budget_amount, marketplace_avg_budget_amount, budget_gap_amount FROM flexhire.clickstream_workshop.client_category_benchmark WHERE client_impressions IS NOT NULL ORDER BY ABS(ctr_gap_pct) DESC LIMIT 20"
+      "query": "SELECT company_name, category, client_active_jobs, client_impressions, client_ctr_pct, marketplace_ctr_pct, ctr_gap_pct, client_avg_budget_amount, marketplace_avg_budget_amount, budget_gap_amount FROM clickstream_dev.gold.client_category_benchmark WHERE client_impressions IS NOT NULL ORDER BY ABS(ctr_gap_pct) DESC LIMIT 20"
     },
     {
       "name": "client_opportunities",
       "displayName": "5 · Sales Call Opportunities",
-      "query": "SELECT company_name, title, category, impressions, ctr_pct, opportunity_type, recommended_action FROM flexhire.clickstream_workshop.client_opportunities ORDER BY impressions DESC, ctr_pct ASC LIMIT 20"
+      "query": "SELECT company_name, title, category, impressions, ctr_pct, opportunity_type, recommended_action FROM clickstream_dev.gold.client_opportunities ORDER BY impressions DESC, ctr_pct ASC LIMIT 20"
     },
     {
       "name": "marketplace_demand_snapshot",
       "displayName": "6 · Marketplace Demand Snapshot",
-      "query": "SELECT category, MEASURE(impressions) AS impressions, MEASURE(clicks) AS clicks, MEASURE(ctr_pct) AS ctr_pct, MEASURE(avg_budget_amount) AS avg_budget_amount FROM flexhire.clickstream_workshop.mv_category_performance GROUP BY category ORDER BY impressions DESC LIMIT 15"
+      "query": "SELECT category, MEASURE(impressions) AS impressions, MEASURE(clicks) AS clicks, MEASURE(ctr_pct) AS ctr_pct, MEASURE(avg_budget_amount) AS avg_budget_amount FROM clickstream_dev.gold.mv_category_performance GROUP BY category ORDER BY impressions DESC LIMIT 15"
     }
   ],
   "pages": [

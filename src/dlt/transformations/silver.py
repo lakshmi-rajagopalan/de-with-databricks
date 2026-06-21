@@ -40,6 +40,12 @@ def parse_numeric(col):
         .otherwise(None)
     )
 
+def parse_integer(col):
+    return (
+        F.when(col.cast("integer").isNotNull(), col.cast("integer"))
+        .otherwise(None)
+    )
+
 # COMMAND ----------
 # MAGIC %md
 # MAGIC ### job_openings
@@ -133,8 +139,9 @@ dp.create_auto_cdc_flow(
 # COMMAND ----------
 
 @dp.table(name="silver.search_events")
-@dp.expect_or_drop("valid_search_query", "search_query IS NOT NULL")
+@dp.expect_or_drop("valid_search_guid", "search_guid IS NOT NULL")
 @dp.expect_or_drop("valid_visitor_id", "visitor_id IS NOT NULL")
+@dp.expect_or_drop("valid_search_query", "search_query IS NOT NULL")
 @dp.expect("known_sublocation", "sublocation IN ('search_results', 'featured_jobs')")
 @dp.expect("known_sort", "sort IN ('recency', 'relevance')")
 def search_events():
@@ -147,13 +154,17 @@ def search_events():
 # COMMAND ----------
 
 @dp.table(name="silver.impression_events")
-@dp.expect_or_drop("valid_opening_uid", "opening_uid IS NOT NULL")
+@dp.expect_or_drop("valid_event_id", "event_id IS NOT NULL")
 @dp.expect_or_drop("valid_visitor_id", "visitor_id IS NOT NULL")
+@dp.expect_or_drop("valid_search_guid", "search_guid IS NOT NULL")
+@dp.expect_or_drop("valid_opening_uid", "opening_uid IS NOT NULL")
+@dp.expect_or_drop("valid_position", "position > 0")
 @dp.expect_or_drop("valid_visitors", "is_bot = false")
 def impression_events():
     return (
         spark.readStream.table("bronze.impression_events")
             .withColumn("is_bot", F.when(F.col("is_bot") == F.lit("True"), True).otherwise(False))
+            .withColumn("position", parse_integer(F.col("position")))
     )
 
 # COMMAND ----------
@@ -163,11 +174,16 @@ def impression_events():
 # COMMAND ----------
 
 @dp.table(name="silver.click_events")
+@dp.expect_or_drop("valid_event_id", "event_id IS NOT NULL")
+@dp.expect_or_drop("valid_visitor_id", "visitor_id IS NOT NULL")
+@dp.expect_or_drop("valid_search_guid", "search_guid IS NOT NULL")
 @dp.expect_or_drop("valid_opening_uid", "opening_uid IS NOT NULL")
+@dp.expect_or_drop("valid_position", "position > 0")
 @dp.expect_or_drop("valid_time_to_click_secs", "time_to_click_secs IS NOT NULL OR time_to_click_secs >= 0")
 def click_events():
     return (
         spark.readStream.table("bronze.click_events")
+            .withColumn("position", parse_integer(F.col("position")))
             .withColumn("time_to_click_secs", parse_numeric(F.col("time_to_click_secs")))
     )
 

@@ -1,17 +1,17 @@
 -- Databricks notebook source
 
 -- COMMAND ----------
-CREATE OR REPLACE VIEW flexhire.clickstream_workshop.mv_search_funnel
+CREATE OR REPLACE VIEW clickstream_dev.gold.mv_search_funnel
 WITH METRICS LANGUAGE YAML AS $$
 version: 1.1
 comment: "Daily search funnel — impressions, clicks, CTR"
-source: flexhire.clickstream_workshop.silver_impression_events
+source: clickstream_dev.silver.impression_events
 joins:
   - name: searches
-    source: flexhire.clickstream_workshop.silver_search_events
+    source: clickstream_dev.silver.search_events
     using: [search_guid]
   - name: clicks
-    source: flexhire.clickstream_workshop.silver_click_events
+    source: clickstream_dev.silver.click_events
     using: [visitor_id, opening_uid, search_guid]
 dimensions:
   - name: event_date
@@ -26,14 +26,14 @@ measures:
 $$;
 
 -- COMMAND ----------
-CREATE OR REPLACE VIEW flexhire.clickstream_workshop.mv_position_bias
+CREATE OR REPLACE VIEW clickstream_dev.gold.mv_position_bias
 WITH METRICS LANGUAGE YAML AS $$
 version: 1.1
 comment: "Click-through rate by impression position — position bias curve"
-source: flexhire.clickstream_workshop.silver_impression_events
+source: clickstream_dev.silver.impression_events
 joins:
   - name: clicks
-    source: flexhire.clickstream_workshop.silver_click_events
+    source: clickstream_dev.silver.click_events
     using: [visitor_id, opening_uid, search_guid]
 dimensions:
   - name: position
@@ -50,17 +50,17 @@ measures:
 $$;
 
 -- COMMAND ----------
-CREATE OR REPLACE VIEW flexhire.clickstream_workshop.mv_category_performance
+CREATE OR REPLACE VIEW clickstream_dev.gold.mv_category_performance
 WITH METRICS LANGUAGE YAML AS $$
 version: 1.1
 comment: "Per-category funnel and average budget"
-source: flexhire.clickstream_workshop.silver_impression_events
+source: clickstream_dev.silver.impression_events
 joins:
   - name: job
-    source: flexhire.clickstream_workshop.silver_job_openings
+    source: clickstream_dev.silver.job_openings
     using: [opening_uid]
   - name: clicks
-    source: flexhire.clickstream_workshop.silver_click_events
+    source: clickstream_dev.silver.click_events
     using: [visitor_id, opening_uid, search_guid]
 dimensions:
   - name: category
@@ -73,24 +73,24 @@ measures:
   - name: ctr_pct
     expr: COUNT(clicks.event_id) * 100.0 / COUNT(1)
   - name: avg_budget_amount
-    expr: AVG(job.budget_amount)
+    expr: AVG(job.numeric_budget_amount)
 $$;
 
 -- COMMAND ----------
-CREATE OR REPLACE VIEW flexhire.clickstream_workshop.mv_client_portfolio
+CREATE OR REPLACE VIEW clickstream_dev.gold.mv_client_portfolio
 WITH METRICS LANGUAGE YAML AS $$
 version: 1.1
 comment: "Per-client portfolio summary — job counts, funnel metrics, budget"
-source: flexhire.clickstream_workshop.silver_job_openings
+source: clickstream_dev.silver.job_openings
 joins:
   - name: clients
-    source: flexhire.clickstream_workshop.silver_clients
+    source: clickstream_dev.silver.clients
     using: [client_uid]
   - name: impressions
-    source: flexhire.clickstream_workshop.silver_impression_events
+    source: clickstream_dev.silver.impression_events
     using: [opening_uid]
   - name: clicks
-    source: flexhire.clickstream_workshop.silver_click_events
+    source: clickstream_dev.silver.click_events
     using: [opening_uid]
 dimensions:
   - name: client_uid
@@ -111,7 +111,7 @@ measures:
   - name: ctr_pct
     expr: COUNT(DISTINCT clicks.event_id) * 100.0 / NULLIF(COUNT(DISTINCT impressions.event_id), 0)
   - name: avg_budget_amount
-    expr: AVG(budget_amount)
+    expr: AVG(numeric_budget_amount)
   - name: unique_categories
     expr: COUNT(DISTINCT category)
 $$;

@@ -9,7 +9,7 @@
 -- MAGIC `client_portfolio_summary` has been promoted to `mv_client_portfolio` in `metric_views.sql`.
 
 -- COMMAND ----------
-CREATE OR REPLACE VIEW flexhire.clickstream_workshop.client_posting_performance AS
+CREATE OR REPLACE VIEW clickstream_dev.gold.client_posting_performance AS
 SELECT
 	job_openings.client_uid,
 	COALESCE(client_profiles.company_name, job_openings.client_uid) AS company_name,
@@ -17,7 +17,7 @@ SELECT
 	job_openings.title,
 	job_openings.category,
 	job_openings.budget_type,
-	ROUND(job_openings.budget_amount, 2) AS budget_amount,
+	ROUND(job_openings.numeric_budget_amount, 2) AS budget_amount,
 	job_openings.is_active,
 	COALESCE(job_performance.impressions, 0) AS impressions,
 	COALESCE(job_performance.clicks, 0) AS clicks,
@@ -36,14 +36,14 @@ SELECT
 		WHEN job_openings.is_active AND COALESCE(job_performance.clicks, 0) = 0 THEN 'Review budget and targeting'
 		ELSE 'Maintain current strategy'
 	END AS recommended_action
-FROM flexhire.clickstream_workshop.silver_job_openings AS job_openings
-LEFT JOIN flexhire.clickstream_workshop.gold_job_performance AS job_performance
+FROM clickstream_dev.silver.job_openings AS job_openings
+LEFT JOIN clickstream_dev.gold.job_performance AS job_performance
 	USING (opening_uid)
-LEFT JOIN flexhire.clickstream_workshop.silver_clients AS client_profiles
+LEFT JOIN clickstream_dev.silver.clients AS client_profiles
 	USING (client_uid);
 
 -- COMMAND ----------
-CREATE OR REPLACE VIEW flexhire.clickstream_workshop.client_category_benchmark AS
+CREATE OR REPLACE VIEW clickstream_dev.gold.client_category_benchmark AS
 SELECT
 	client_category.client_uid,
 	COALESCE(client_profiles.company_name, client_category.client_uid) AS company_name,
@@ -69,19 +69,19 @@ FROM (
 		SUM(COALESCE(job_performance.impressions, 0)) AS client_impressions,
 		SUM(COALESCE(job_performance.clicks, 0)) AS client_clicks,
 		SUM(COALESCE(job_performance.clicks, 0)) / NULLIF(SUM(COALESCE(job_performance.impressions, 0)), 0) * 100 AS client_ctr_pct,
-		AVG(job_openings.budget_amount) AS client_avg_budget_amount
-	FROM flexhire.clickstream_workshop.silver_job_openings AS job_openings
-	LEFT JOIN flexhire.clickstream_workshop.gold_job_performance AS job_performance
+		AVG(job_openings.numeric_budget_amount) AS client_avg_budget_amount
+	FROM clickstream_dev.silver.job_openings AS job_openings
+	LEFT JOIN clickstream_dev.gold.job_performance AS job_performance
 		USING (opening_uid)
 	GROUP BY job_openings.client_uid, job_openings.category
 ) AS client_category
-LEFT JOIN flexhire.clickstream_workshop.gold_category_performance AS marketplace_category
+LEFT JOIN clickstream_dev.gold.category_performance AS marketplace_category
 	ON client_category.category = marketplace_category.category
-LEFT JOIN flexhire.clickstream_workshop.silver_clients AS client_profiles
+LEFT JOIN clickstream_dev.silver.clients AS client_profiles
 	ON client_category.client_uid = client_profiles.client_uid;
 
 -- COMMAND ----------
-CREATE OR REPLACE VIEW flexhire.clickstream_workshop.client_opportunities AS
+CREATE OR REPLACE VIEW clickstream_dev.gold.client_opportunities AS
 SELECT
 	posting.client_uid,
 	posting.company_name,
@@ -102,8 +102,8 @@ SELECT
 		ELSE 'Monitor'
 	END AS opportunity_type,
 	posting.recommended_action
-FROM flexhire.clickstream_workshop.client_posting_performance AS posting
-LEFT JOIN flexhire.clickstream_workshop.client_category_benchmark AS benchmark
+FROM clickstream_dev.gold.client_posting_performance AS posting
+LEFT JOIN clickstream_dev.gold.client_category_benchmark AS benchmark
 	ON posting.client_uid = benchmark.client_uid
  AND posting.category = benchmark.category
 WHERE posting.is_active

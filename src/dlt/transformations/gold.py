@@ -44,15 +44,15 @@ from pyspark.sql.functions import (
 # COMMAND ----------
 
 @dp.materialized_view(
-    name="gold_job_performance",
+    name="gold.job_performance",
     comment="Per-job funnel: impressions, clicks, CTR and average position",
     table_properties={"quality": "gold"},
 )
 @dp.expect("clicks_le_impressions", "clicks <= impressions OR clicks IS NULL")
 def gold_job_performance():
-    jobs        = dp.read("silver_job_openings")
-    impressions = dp.read("silver_impression_events")
-    clicks      = dp.read("silver_click_events")
+    jobs        = dp.read("silver.job_openings")
+    impressions = dp.read("silver.impression_events")
+    clicks      = dp.read("silver.click_events")
 
     imp_agg = (
         impressions
@@ -85,7 +85,7 @@ def gold_job_performance():
             col("title"),
             col("category"),
             col("budget_type"),
-            col("budget_amount"),
+            col("numeric_budget_amount"),
             col("client_uid"),
             col("posted_at"),
             col("is_active"),
@@ -113,16 +113,16 @@ def gold_job_performance():
 # COMMAND ----------
 
 @dp.materialized_view(
-    name="gold_search_query_performance",
+    name="gold.search_query_performance",
     comment="Per-query funnel: impressions, clicks and CTR for each search term",
     table_properties={"quality": "gold"},
 )
 def gold_search_query_performance():
-    impressions = dp.read("silver_impression_events")
-    searches    = dp.read("silver_search_events")
-    clicks      = dp.read("silver_click_events")
+    impressions = dp.read("silver.impression_events")
+    searches    = dp.read("silver.search_events")
+    clicks      = dp.read("silver.click_events")
 
-    # Enrich impressions with search_query from silver_search_events
+    # Enrich impressions with search_query from silver.search_events
     imp_with_query = (
         impressions
         .join(searches.select("search_guid", "search_query"), "search_guid", "left")
@@ -167,13 +167,13 @@ def gold_search_query_performance():
 # COMMAND ----------
 
 @dp.materialized_view(
-    name="gold_position_ctr",
+    name="gold.position_ctr",
     comment="CTR by search result position — used to analyse and correct for position bias",
     table_properties={"quality": "gold"},
 )
 def gold_position_ctr():
-    impressions = dp.read("silver_impression_events")
-    clicks      = dp.read("silver_click_events")
+    impressions = dp.read("silver.impression_events")
+    clicks      = dp.read("silver.click_events")
 
     imp_pos = (
         impressions
@@ -208,14 +208,14 @@ def gold_position_ctr():
 # COMMAND ----------
 
 @dp.materialized_view(
-    name="gold_category_performance",
+    name="gold.category_performance",
     comment="Job category rollup: job count, impressions, clicks, CTR and average budget",
     table_properties={"quality": "gold"},
 )
 def gold_category_performance():
-    jobs        = dp.read("silver_job_openings")
-    impressions = dp.read("silver_impression_events")
-    clicks      = dp.read("silver_click_events")
+    jobs        = dp.read("silver.job_openings")
+    impressions = dp.read("silver.impression_events")
+    clicks      = dp.read("silver.click_events")
 
     # Attach category to impressions via opening_uid
     imp_with_cat = impressions.join(jobs.select("opening_uid", "category"), "opening_uid", "left")
@@ -230,7 +230,7 @@ def gold_category_performance():
         .groupBy("category")
         .agg(
             count("opening_uid").alias("job_count"),
-            _round(avg("budget_amount"), 2).alias("avg_budget_amount"),
+            _round(avg("numeric_budget_amount"), 2).alias("avg_budget_amount"),
             _sum(when(col("is_active"), 1).otherwise(0)).alias("active_jobs"),
         )
     )
@@ -268,16 +268,16 @@ def gold_category_performance():
 # COMMAND ----------
 
 @dp.materialized_view(
-    name="gold_sublocation_performance",
+    name="gold.sublocation_performance",
     comment="Sublocation comparison: search_results vs featured_jobs CTR and engagement",
     table_properties={"quality": "gold"},
 )
 def gold_sublocation_performance():
-    impressions = dp.read("silver_impression_events")
-    searches    = dp.read("silver_search_events")
-    clicks      = dp.read("silver_click_events")
+    impressions = dp.read("silver.impression_events")
+    searches    = dp.read("silver.search_events")
+    clicks      = dp.read("silver.click_events")
 
-    # Enrich impressions with sublocation from silver_search_events
+    # Enrich impressions with sublocation from silver.search_events
     imp_with_sub = (
         impressions
         .join(searches.select("search_guid", "sublocation"), "search_guid", "left")
@@ -331,15 +331,15 @@ def gold_sublocation_performance():
 # COMMAND ----------
 
 @dp.materialized_view(
-    name="gold_daily_metrics",
+    name="gold.daily_metrics",
     comment="Daily search funnel trend: impressions, clicks, CTR and unique visitor counts",
     table_properties={"quality": "gold"},
 )
 @dp.expect("positive_ctr", "ctr_pct IS NULL OR (ctr_pct >= 0 AND ctr_pct <= 100)")
 def gold_daily_metrics():
-    impressions = dp.read("silver_impression_events")
-    searches    = dp.read("silver_search_events")
-    clicks      = dp.read("silver_click_events")
+    impressions = dp.read("silver.impression_events")
+    searches    = dp.read("silver.search_events")
+    clicks      = dp.read("silver.click_events")
 
     imp_daily = (
         impressions

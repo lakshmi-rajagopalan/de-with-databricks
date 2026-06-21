@@ -3,67 +3,67 @@
     {
       "name": "funnel_summary",
       "displayName": "1 · Funnel Summary",
-      "query": "SELECT SUM(impressions) AS total_impressions, SUM(clicks) AS total_clicks, ROUND(SUM(clicks) / SUM(impressions) * 100, 2) AS overall_ctr_pct, COUNT(DISTINCT opening_uid) AS jobs_in_results FROM flexhire.clickstream_workshop.gold_job_performance"
+      "query": "SELECT SUM(impressions) AS total_impressions, SUM(clicks) AS total_clicks, ROUND(SUM(clicks) / SUM(impressions) * 100, 2) AS overall_ctr_pct, COUNT(DISTINCT opening_uid) AS jobs_in_results FROM clickstream_dev.gold.job_performance"
     },
     {
       "name": "top_jobs_by_impressions",
       "displayName": "2 · Top 10 Jobs by Impressions",
-      "query": "SELECT title, category, budget_type, budget_amount, impressions, clicks, ctr_pct, avg_impression_position, avg_time_to_click_secs FROM flexhire.clickstream_workshop.gold_job_performance WHERE impressions IS NOT NULL ORDER BY impressions DESC LIMIT 10"
+      "query": "SELECT title, category, budget_type, numeric_budget_amount, impressions, clicks, ctr_pct, avg_impression_position, avg_time_to_click_secs FROM clickstream_dev.gold.job_performance WHERE impressions IS NOT NULL ORDER BY impressions DESC LIMIT 10"
     },
     {
       "name": "top_jobs_by_ctr",
       "displayName": "3 · Top 10 Jobs by CTR",
-      "query": "SELECT title, category, budget_type, budget_amount, impressions, clicks, ctr_pct, avg_impression_position FROM flexhire.clickstream_workshop.gold_job_performance WHERE impressions >= 5 ORDER BY ctr_pct DESC LIMIT 10"
+      "query": "SELECT title, category, budget_type, numeric_budget_amount, impressions, clicks, ctr_pct, avg_impression_position FROM clickstream_dev.gold.job_performance WHERE impressions >= 5 ORDER BY ctr_pct DESC LIMIT 10"
     },
     {
       "name": "position_bias",
       "displayName": "4 · Position Bias Curve",
-      "query": "SELECT position, impressions, clicks, ctr_pct, avg_time_to_click_secs FROM flexhire.clickstream_workshop.gold_position_ctr WHERE position <= 20 ORDER BY position"
+      "query": "SELECT position, impressions, clicks, ctr_pct, avg_time_to_click_secs FROM clickstream_dev.gold.position_ctr WHERE position <= 20 ORDER BY position"
     },
     {
       "name": "category_performance",
       "displayName": "5 · Category Performance",
-      "query": "SELECT category, job_count, active_jobs, ROUND(avg_budget_amount, 0) AS avg_budget_amount, impressions, unique_visitors, clicks, ctr_pct FROM flexhire.clickstream_workshop.gold_category_performance WHERE category IS NOT NULL ORDER BY impressions DESC"
+      "query": "SELECT category, job_count, active_jobs, ROUND(avg_budget_amount, 0) AS avg_budget_amount, impressions, unique_visitors, clicks, ctr_pct FROM clickstream_dev.gold.category_performance WHERE category IS NOT NULL ORDER BY impressions DESC"
     },
     {
       "name": "category_ctr_vs_budget",
       "displayName": "6 · Category CTR vs Budget",
-      "query": "SELECT category, ROUND(avg_budget_amount, 0) AS avg_budget_amount, ctr_pct, impressions FROM flexhire.clickstream_workshop.gold_category_performance WHERE category IS NOT NULL AND avg_budget_amount IS NOT NULL"
+      "query": "SELECT category, ROUND(avg_budget_amount, 0) AS avg_budget_amount, ctr_pct, impressions FROM clickstream_dev.gold.category_performance WHERE category IS NOT NULL AND avg_budget_amount IS NOT NULL"
     },
     {
       "name": "search_query_performance",
       "displayName": "7 · Search Query Performance",
-      "query": "SELECT search_query, search_sessions, unique_visitors, unique_jobs_shown, impressions, clicks, ctr_pct FROM flexhire.clickstream_workshop.gold_search_query_performance WHERE search_query IS NOT NULL ORDER BY impressions DESC LIMIT 20"
+      "query": "SELECT search_query, search_sessions, unique_visitors, unique_jobs_shown, impressions, clicks, ctr_pct FROM clickstream_dev.gold.search_query_performance WHERE search_query IS NOT NULL ORDER BY impressions DESC LIMIT 20"
     },
     {
       "name": "sublocation_performance",
       "displayName": "8 · Featured Jobs vs Search Results",
-      "query": "SELECT sublocation, impressions, unique_visitors, unique_jobs, avg_position, clicks, ctr_pct, avg_time_to_click_secs FROM flexhire.clickstream_workshop.gold_sublocation_performance ORDER BY sublocation"
+      "query": "SELECT sublocation, impressions, unique_visitors, unique_jobs, avg_position, clicks, ctr_pct, avg_time_to_click_secs FROM clickstream_dev.gold.sublocation_performance ORDER BY sublocation"
     },
     {
       "name": "daily_trend",
       "displayName": "9 · Daily Trend",
-      "query": "SELECT event_date, impressions, unique_visitors, search_sessions, unique_jobs_shown, clicks, ctr_pct, avg_time_to_click_secs FROM flexhire.clickstream_workshop.gold_daily_metrics ORDER BY event_date"
+      "query": "SELECT event_date, impressions, unique_visitors, search_sessions, unique_jobs_shown, clicks, ctr_pct, avg_time_to_click_secs FROM clickstream_dev.gold.daily_metrics ORDER BY event_date"
     },
     {
       "name": "time_to_click",
       "displayName": "10 · Time-to-Click Distribution",
-      "query": "SELECT CASE WHEN time_to_click_secs IS NULL THEN 'unknown' WHEN time_to_click_secs < 3 THEN '< 3s (instant)' WHEN time_to_click_secs < 10 THEN '3-10s' WHEN time_to_click_secs < 30 THEN '10-30s' WHEN time_to_click_secs < 60 THEN '30-60s' ELSE '> 60s' END AS latency_bucket, COUNT(*) AS clicks, ROUND(AVG(time_to_click_secs), 1) AS avg_secs FROM flexhire.clickstream_workshop.silver_click_events GROUP BY latency_bucket"
+      "query": "SELECT CASE WHEN time_to_click_secs IS NULL THEN 'unknown' WHEN time_to_click_secs < 3 THEN '< 3s (instant)' WHEN time_to_click_secs < 10 THEN '3-10s' WHEN time_to_click_secs < 30 THEN '10-30s' WHEN time_to_click_secs < 60 THEN '30-60s' ELSE '> 60s' END AS latency_bucket, COUNT(*) AS clicks, ROUND(AVG(time_to_click_secs), 1) AS avg_secs FROM clickstream_dev.silver.click_events GROUP BY latency_bucket"
     },
     {
       "name": "budget_type_distribution",
       "displayName": "11 · Budget Type Distribution",
-      "query": "SELECT budget_type, COUNT(*) AS job_count, ROUND(AVG(budget_amount), 2) AS avg_budget_amount, SUM(impressions) AS total_impressions, ROUND(SUM(clicks) / SUM(impressions) * 100, 2) AS ctr_pct FROM flexhire.clickstream_workshop.gold_job_performance WHERE budget_type IS NOT NULL GROUP BY budget_type ORDER BY job_count DESC"
+      "query": "SELECT budget_type, COUNT(*) AS job_count, ROUND(AVG(numeric_budget_amount), 2) AS avg_budget_amount, SUM(impressions) AS total_impressions, ROUND(SUM(clicks) / SUM(impressions) * 100, 2) AS ctr_pct FROM clickstream_dev.gold.job_performance WHERE budget_type IS NOT NULL GROUP BY budget_type ORDER BY job_count DESC"
     },
     {
       "name": "client_activity",
       "displayName": "12 · Client Activity Summary",
-      "query": "SELECT j.client_uid, COUNT(DISTINCT j.opening_uid) AS jobs_posted, SUM(gp.impressions) AS total_impressions, SUM(gp.clicks) AS total_clicks, ROUND(SUM(gp.clicks) / SUM(gp.impressions) * 100, 2) AS avg_ctr_pct, ROUND(AVG(j.budget_amount), 2) AS avg_budget_amount FROM flexhire.clickstream_workshop.silver_job_openings j LEFT JOIN flexhire.clickstream_workshop.gold_job_performance gp USING (opening_uid) GROUP BY j.client_uid ORDER BY total_impressions DESC LIMIT 15"
+      "query": "SELECT j.client_uid, COUNT(DISTINCT j.opening_uid) AS jobs_posted, SUM(gp.impressions) AS total_impressions, SUM(gp.clicks) AS total_clicks, ROUND(SUM(gp.clicks) / SUM(gp.impressions) * 100, 2) AS avg_ctr_pct, ROUND(AVG(j.numeric_budget_amount), 2) AS avg_budget_amount FROM clickstream_dev.silver.job_openings j LEFT JOIN clickstream_dev.gold.job_performance gp USING (opening_uid) GROUP BY j.client_uid ORDER BY total_impressions DESC LIMIT 15"
     },
     {
       "name": "session_funnel",
       "displayName": "13 · Session-Level Funnel (Star Schema)",
-      "query": "SELECT CASE WHEN impressions_in_session = 1 THEN '1 impression' WHEN impressions_in_session <= 3 THEN '2-3 impressions' WHEN impressions_in_session <= 5 THEN '4-5 impressions' WHEN impressions_in_session <= 10 THEN '6-10 impressions' ELSE '> 10 impressions' END AS session_size, COUNT(DISTINCT search_guid) AS sessions, SUM(CASE WHEN any_clicked THEN 1 ELSE 0 END) AS sessions_with_click, ROUND(SUM(CASE WHEN any_clicked THEN 1 ELSE 0 END) / COUNT(DISTINCT search_guid) * 100, 1) AS session_conversion_pct FROM (SELECT search_guid, COUNT(*) AS impressions_in_session, MAX(CAST(was_clicked AS INT)) = 1 AS any_clicked FROM flexhire.clickstream_workshop.fact_search_events GROUP BY search_guid) sessions GROUP BY session_size ORDER BY sessions DESC"
+      "query": "SELECT CASE WHEN impressions_in_session = 1 THEN '1 impression' WHEN impressions_in_session <= 3 THEN '2-3 impressions' WHEN impressions_in_session <= 5 THEN '4-5 impressions' WHEN impressions_in_session <= 10 THEN '6-10 impressions' ELSE '> 10 impressions' END AS session_size, COUNT(DISTINCT search_guid) AS sessions, SUM(CASE WHEN any_clicked THEN 1 ELSE 0 END) AS sessions_with_click, ROUND(SUM(CASE WHEN any_clicked THEN 1 ELSE 0 END) / COUNT(DISTINCT search_guid) * 100, 1) AS session_conversion_pct FROM (SELECT search_guid, COUNT(*) AS impressions_in_session, MAX(CAST(was_clicked AS INT)) = 1 AS any_clicked FROM clickstream_dev.gold.fact_search_events GROUP BY search_guid) sessions GROUP BY session_size ORDER BY sessions DESC"
     }
   ],
   "pages": [

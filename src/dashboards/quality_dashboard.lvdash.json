@@ -131,15 +131,42 @@
             "name": "pipelineid",
             "queries": [
               {
-                "name": "parameter_dashboards/01f13faffd311b83b94201af910b410a/datasets/01f13fbec2c61e729922fa7899af7e72_pipeline_id",
+                "name": "q_rows_processed",
                 "query": {
                   "datasetName": "rows_processed_vs_dropped",
-                  "parameters": [
-                    {
-                      "name": "pipeline_id",
-                      "keyword": "pipeline_id"
-                    }
-                  ],
+                  "parameters": [{"name": "pipeline_id", "keyword": "pipeline_id"}],
+                  "disaggregated": false
+                }
+              },
+              {
+                "name": "q_expectation_breakdown",
+                "query": {
+                  "datasetName": "expectation_breakdown",
+                  "parameters": [{"name": "pipeline_id", "keyword": "pipeline_id"}],
+                  "disaggregated": false
+                }
+              },
+              {
+                "name": "q_top_failing",
+                "query": {
+                  "datasetName": "top_failing_expectations",
+                  "parameters": [{"name": "pipeline_id", "keyword": "pipeline_id"}],
+                  "disaggregated": false
+                }
+              },
+              {
+                "name": "q_drop_rate_trend",
+                "query": {
+                  "datasetName": "drop_rate_trend",
+                  "parameters": [{"name": "pipeline_id", "keyword": "pipeline_id"}],
+                  "disaggregated": false
+                }
+              },
+              {
+                "name": "q_expectation_event_log",
+                "query": {
+                  "datasetName": "expectation_event_log",
+                  "parameters": [{"name": "pipeline_id", "keyword": "pipeline_id"}],
                   "disaggregated": false
                 }
               }
@@ -148,14 +175,13 @@
               "version": 2,
               "frame": {
                 "showTitle": true,
-                "title": "PipelineId"
+                "title": "Pipeline ID"
               },
-              "widgetType": "filter-single-select",
+              "widgetType": "filter-text-entry",
               "encodings": {
                 "fields": [
                   {
-                    "parameterName": "pipeline_id",
-                    "queryName": "parameter_dashboards/01f13faffd311b83b94201af910b410a/datasets/01f13fbec2c61e729922fa7899af7e72_pipeline_id"
+                    "parameterName": "pipeline_id"
                   }
                 ]
               }

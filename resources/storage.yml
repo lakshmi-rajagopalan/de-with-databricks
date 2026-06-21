@@ -18,7 +18,7 @@ resources:
       comment: Gold layer — aggregated and business-ready data.
 
   volumes:
-    raw:
+    landing:
       catalog_name: ${var.catalog_name}
       schema_name: ${resources.schemas.raw.name}
       name: landing

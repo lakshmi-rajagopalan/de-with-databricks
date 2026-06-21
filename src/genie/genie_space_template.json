@@ -3,46 +3,46 @@
   "data_sources": {
     "tables": [
       {
-        "identifier": "flexhire.clickstream_workshop.silver_impression_events"
+        "identifier": "clickstream_dev.silver.impression_events"
       },
       {
-        "identifier": "flexhire.clickstream_workshop.silver_click_events"
+        "identifier": "clickstream_dev.silver.click_events"
       },
       {
-        "identifier": "flexhire.clickstream_workshop.silver_job_openings"
+        "identifier": "clickstream_dev.silver.job_openings"
       },
       {
-        "identifier": "flexhire.clickstream_workshop.silver_clients"
+        "identifier": "clickstream_dev.silver.clients"
       },
       {
-        "identifier": "flexhire.clickstream_workshop.silver_freelancers"
+        "identifier": "clickstream_dev.silver.freelancers"
       },
       {
-        "identifier": "flexhire.clickstream_workshop.gold_job_performance"
+        "identifier": "clickstream_dev.gold.job_performance"
       },
       {
-        "identifier": "flexhire.clickstream_workshop.gold_position_ctr"
+        "identifier": "clickstream_dev.gold.position_ctr"
       },
       {
-        "identifier": "flexhire.clickstream_workshop.gold_category_performance"
+        "identifier": "clickstream_dev.gold.category_performance"
       },
       {
-        "identifier": "flexhire.clickstream_workshop.gold_daily_metrics"
+        "identifier": "clickstream_dev.gold.daily_metrics"
       },
       {
-        "identifier": "flexhire.clickstream_workshop.gold_search_query_performance"
+        "identifier": "clickstream_dev.gold.search_query_performance"
       },
       {
-        "identifier": "flexhire.clickstream_workshop.gold_sublocation_performance"
+        "identifier": "clickstream_dev.gold.sublocation_performance"
       },
       {
-        "identifier": "flexhire.clickstream_workshop.mv_search_funnel"
+        "identifier": "clickstream_dev.gold.mv_search_funnel"
       },
       {
-        "identifier": "flexhire.clickstream_workshop.mv_position_bias"
+        "identifier": "clickstream_dev.gold.mv_position_bias"
       },
       {
-        "identifier": "flexhire.clickstream_workshop.mv_category_performance"
+        "identifier": "clickstream_dev.gold.mv_category_performance"
       }
     ]
   }

@@ -10,10 +10,10 @@ resources:
         raw_data_path: /Volumes/${var.catalog_name}/${resources.schemas.raw.name}/${resources.volumes.landing.name}
       libraries:
         - notebook:
-            path: ../src/dlt/bronze.py
+            path: ../src/dlt/transformations/bronze.py
         - notebook:
-            path: ../src/dlt/silver.py
+            path: ../src/dlt/transformations/silver.py
         - notebook:
-            path: ../src/dlt/gold.py
+            path: ../src/dlt/transformations/gold.py
         - notebook:
-            path: ../src/dlt/star_schema.py
+            path: ../src/dlt/transformations/star_schema.py

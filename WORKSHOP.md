@@ -37,8 +37,12 @@ export BUNDLE_VAR_warehouse_id=$(databricks warehouses list -o json \
   | jq -r '.[] | select(.name=="Serverless Starter Warehouse") | .id' | head -n1)
 echo "$BUNDLE_VAR_warehouse_id"
 
-export BUNDLE_VAR_catalog_name=flexhire
+export BUNDLE_VAR_catalog_name=clickstream_dev
 ```
+
+**Create the Unity Catalog catalog** (required before deploying the bundle):
+
+In the Databricks UI: go to **Catalog** → **+** (Add) → **Create catalog**, name it `clickstream_dev`, and click **Create**.
 
 ---
 

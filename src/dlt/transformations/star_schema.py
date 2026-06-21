@@ -50,7 +50,7 @@ from pyspark.sql.types import BooleanType
 # MAGIC ## dim_job
 # MAGIC
 # MAGIC One row per job opening. Carries all descriptive attributes about the job so
-# MAGIC downstream queries never need to join back to silver_job_openings.
+# MAGIC downstream queries never need to join back to silver.job_openings.
 
 # COMMAND ----------
 
@@ -61,13 +61,13 @@ from pyspark.sql.types import BooleanType
 )
 def dim_job():
     return (
-        dp.read("silver_job_openings")
+        dp.read("silver.job_openings")
         .select(
             col("opening_uid"),
             col("title"),
             col("category"),
             col("budget_type"),
-            col("budget_amount"),
+            col("numeric_budget_amount"),
             col("client_uid"),
             col("posted_at"),
             col("is_active"),
@@ -78,9 +78,9 @@ def dim_job():
 # MAGIC %md
 # MAGIC ## dim_client
 # MAGIC
-# MAGIC One row per client. Sourced from `silver_clients` (the authoritative client list)
+# MAGIC One row per client. Sourced from `silver.clients` (the authoritative client list)
 # MAGIC and enriched with posting activity (job count, first/last post date) derived from
-# MAGIC `silver_job_openings` via a LEFT JOIN.
+# MAGIC `silver.job_openings` via a LEFT JOIN.
 # MAGIC
 # MAGIC Clients with no postings still appear here; their activity columns will be null.
 
@@ -92,12 +92,12 @@ def dim_job():
     table_properties={"quality": "gold"},
 )
 def dim_client():
-    profile = dp.read("silver_clients").select(
+    profile = dp.read("silver.clients").select(
         "client_uid", "company_name", "country", "industry",
-        "payment_verified", "total_spend_usd", "avg_rating",
+        "payment_verified", "numeric_total_spend_usd", "avg_rating",
     )
     activity = (
-        dp.read("silver_job_openings")
+        dp.read("silver.job_openings")
         .groupBy("client_uid")
         .agg(
             count("opening_uid").alias("jobs_posted"),
@@ -124,11 +124,11 @@ def dim_client():
 )
 def dim_category():
     return (
-        dp.read("silver_job_openings")
+        dp.read("silver.job_openings")
         .groupBy("category")
         .agg(
             count("opening_uid").alias("total_jobs"),
-            _round(avg("budget_amount"), 2).alias("avg_budget_amount"),
+            _round(avg("numeric_budget_amount"), 2).alias("avg_budget_amount"),
         )
     )
 
@@ -137,7 +137,7 @@ def dim_category():
 # MAGIC ## dim_freelancer
 # MAGIC
 # MAGIC One row per freelancer, keyed on `visitor_id` which links to both
-# MAGIC `fact_search_events` (impressions) and `silver_click_events` (clicks).
+# MAGIC `fact_search_events` (impressions) and `silver.click_events` (clicks).
 # MAGIC
 # MAGIC Enables segmentation questions like:
 # MAGIC - "Do top-rated freelancers click faster?"
@@ -153,14 +153,14 @@ def dim_category():
 )
 def dim_freelancer():
     return (
-        dp.read("silver_freelancers")
+        dp.read("silver.freelancers")
         .select(
             col("visitor_id"),
             col("name"),
             col("country"),
             col("primary_skill"),
-            col("hourly_rate"),
-            col("job_success_score"),
+            col("numeric_hourly_rate"),
+            col("numeric_job_success_score"),
             col("member_since"),
             col("top_rated"),
             col("is_verified"),
@@ -195,7 +195,7 @@ def dim_freelancer():
 )
 def dim_date():
     dates = (
-        dp.read("silver_search_events")
+        dp.read("silver.search_events")
         .select(to_date(col("event_ts")).alias("date_key"))
         .distinct()
     )
@@ -228,7 +228,7 @@ def dim_date():
 )
 def dim_search():
     return (
-        dp.read("silver_search_events")
+        dp.read("silver.search_events")
         .select(
             col("search_guid"),
             col("visitor_id"),
@@ -250,7 +250,7 @@ def dim_search():
 # MAGIC every impression with the matching click outcome (if any) so a single scan
 # MAGIC gives you the full impression → click path.
 # MAGIC
-# MAGIC **Join logic:** LEFT JOIN `silver_click_events` on `(visitor_id, opening_uid, search_guid)`.
+# MAGIC **Join logic:** LEFT JOIN `silver.click_events` on `(visitor_id, opening_uid, search_guid)`.
 # MAGIC If a matching click exists, `was_clicked = true` and `time_to_click_secs` is populated.
 # MAGIC
 # MAGIC **Foreign keys:**
@@ -265,9 +265,9 @@ def dim_search():
     table_properties={"quality": "gold"},
 )
 def fact_search_events():
-    impressions = dp.read("silver_impression_events")
-    clicks      = dp.read("silver_click_events")
-    searches    = dp.read("silver_search_events")
+    impressions = dp.read("silver.impression_events")
+    clicks      = dp.read("silver.click_events")
+    searches    = dp.read("silver.search_events")
 
     # Select only the click columns we need to avoid column-name collisions after join
     clicks_slim = (

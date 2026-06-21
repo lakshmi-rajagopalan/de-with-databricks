@@ -17,15 +17,15 @@
 -- MAGIC
 -- MAGIC **Workshop use cases driving each exercise below:**
 -- MAGIC
--- MAGIC 1. Govern the raw landing zone in `flexhire.clickstream_workshop.raw` and the populated silver/gold tables.
+-- MAGIC 1. Govern the raw landing zone in `clickstream_dev.raw` and the populated silver/gold tables.
 -- MAGIC 2. Separate engineer access to silver tables from analyst access to gold tables.
 -- MAGIC 3. Mask behavioral identifiers such as `visitor_id` for broader audiences.
 -- MAGIC 4. Apply row filters so client-facing consumers only see their own jobs or portfolios.
 -- MAGIC 5. Tag sensitive clickstream assets and trace downstream lineage into dashboards and Genie.
 -- MAGIC
 -- MAGIC **Prerequisites:** the DLT pipeline must have run at least once so that the tables
--- MAGIC `flexhire.clickstream_workshop.silver_click_events`, `flexhire.clickstream_workshop.fact_search_events`, and
--- MAGIC `flexhire.clickstream_workshop.dim_job` exist.
+-- MAGIC `clickstream_dev.silver.click_events`, `clickstream_dev.gold.fact_search_events`, and
+-- MAGIC `clickstream_dev.gold.dim_job` exist.
 
 -- COMMAND ----------
 -- MAGIC %md
@@ -40,22 +40,22 @@
 -- COMMAND ----------
 
 -- Mark silver_click_events as containing PII (visitor_id is a user identifier)
-ALTER TABLE flexhire.clickstream_workshop.silver_click_events
+ALTER TABLE clickstream_dev.silver.click_events
   SET TAGS ('pii' = 'true', 'sensitivity' = 'high', 'domain' = 'search');
 
 -- COMMAND ----------
 
 -- Mark fact_search_events as a gold/star-schema table for discoverability
-ALTER TABLE flexhire.clickstream_workshop.fact_search_events
+ALTER TABLE clickstream_dev.gold.fact_search_events
   SET TAGS ('pii' = 'true', 'sensitivity' = 'high', 'layer' = 'gold', 'domain' = 'search');
 
 -- COMMAND ----------
 
 -- Non-PII gold tables — low sensitivity, analytics-ready
-ALTER TABLE flexhire.clickstream_workshop.gold_job_performance
+ALTER TABLE clickstream_dev.gold.job_performance
   SET TAGS ('sensitivity' = 'low', 'layer' = 'gold');
 
-ALTER TABLE flexhire.clickstream_workshop.dim_job
+ALTER TABLE clickstream_dev.gold.dim_job
   SET TAGS ('sensitivity' = 'low', 'layer' = 'gold');
 
 -- COMMAND ----------
@@ -74,22 +74,22 @@ ALTER TABLE flexhire.clickstream_workshop.dim_job
 -- COMMAND ----------
 
 -- Analysts can use the schema and read all gold / star-schema tables
-GRANT USE SCHEMA ON SCHEMA flexhire.clickstream_workshop TO `analyst`;
+GRANT USE SCHEMA ON SCHEMA clickstream_dev.gold TO `analyst`;
 
-GRANT SELECT ON TABLE flexhire.clickstream_workshop.fact_search_events    TO `analyst`;
-GRANT SELECT ON TABLE flexhire.clickstream_workshop.dim_job               TO `analyst`;
-GRANT SELECT ON TABLE flexhire.clickstream_workshop.dim_client            TO `analyst`;
-GRANT SELECT ON TABLE flexhire.clickstream_workshop.dim_category          TO `analyst`;
-GRANT SELECT ON TABLE flexhire.clickstream_workshop.dim_date              TO `analyst`;
-GRANT SELECT ON TABLE flexhire.clickstream_workshop.gold_job_performance  TO `analyst`;
-GRANT SELECT ON TABLE flexhire.clickstream_workshop.gold_position_ctr     TO `analyst`;
-GRANT SELECT ON TABLE flexhire.clickstream_workshop.gold_category_performance TO `analyst`;
-GRANT SELECT ON TABLE flexhire.clickstream_workshop.gold_daily_metrics    TO `analyst`;
+GRANT SELECT ON TABLE clickstream_dev.gold.fact_search_events    TO `analyst`;
+GRANT SELECT ON TABLE clickstream_dev.gold.dim_job               TO `analyst`;
+GRANT SELECT ON TABLE clickstream_dev.gold.dim_client            TO `analyst`;
+GRANT SELECT ON TABLE clickstream_dev.gold.dim_category          TO `analyst`;
+GRANT SELECT ON TABLE clickstream_dev.gold.dim_date              TO `analyst`;
+GRANT SELECT ON TABLE clickstream_dev.gold.job_performance  TO `analyst`;
+GRANT SELECT ON TABLE clickstream_dev.gold.position_ctr     TO `analyst`;
+GRANT SELECT ON TABLE clickstream_dev.gold.category_performance TO `analyst`;
+GRANT SELECT ON TABLE clickstream_dev.gold.daily_metrics    TO `analyst`;
 
 -- COMMAND ----------
 
 -- Data engineers get full access to all layers (including raw PII in silver)
-GRANT ALL PRIVILEGES ON SCHEMA flexhire.clickstream_workshop TO `data_engineer`;
+GRANT ALL PRIVILEGES ON SCHEMA clickstream_dev.gold TO `data_engineer`;
 
 -- COMMAND ----------
 -- MAGIC %md
@@ -106,28 +106,28 @@ GRANT ALL PRIVILEGES ON SCHEMA flexhire.clickstream_workshop TO `data_engineer`;
 -- COMMAND ----------
 
 -- Create the masking function
-CREATE OR REPLACE FUNCTION flexhire.clickstream_workshop.mask_visitor_id(visitor_id STRING)
+CREATE OR REPLACE FUNCTION clickstream_dev.gold.mask_visitor_id(visitor_id STRING)
   RETURN IF(IS_MEMBER('data_engineer'), visitor_id, SHA2(visitor_id, 256));
 
 -- COMMAND ----------
 
 -- Apply the mask to silver_click_events
-ALTER TABLE flexhire.clickstream_workshop.silver_click_events
+ALTER TABLE clickstream_dev.silver.click_events
   ALTER COLUMN visitor_id
-  SET MASK flexhire.clickstream_workshop.mask_visitor_id;
+  SET MASK clickstream_dev.gold.mask_visitor_id;
 
 -- COMMAND ----------
 
 -- Apply the same mask to fact_search_events
-ALTER TABLE flexhire.clickstream_workshop.fact_search_events
+ALTER TABLE clickstream_dev.gold.fact_search_events
   ALTER COLUMN visitor_id
-  SET MASK flexhire.clickstream_workshop.mask_visitor_id;
+  SET MASK clickstream_dev.gold.mask_visitor_id;
 
 -- COMMAND ----------
 
 -- Verify: run this as an analyst — you should see hashed values
 -- Run this as a data_engineer — you should see the real visitor_id
-SELECT visitor_id FROM flexhire.clickstream_workshop.silver_click_events LIMIT 5;
+SELECT visitor_id FROM clickstream_dev.silver.click_events LIMIT 5;
 
 -- COMMAND ----------
 -- MAGIC %md
@@ -146,19 +146,19 @@ SELECT visitor_id FROM flexhire.clickstream_workshop.silver_click_events LIMIT 5
 -- COMMAND ----------
 
 -- Create the row filter function
-CREATE OR REPLACE FUNCTION flexhire.clickstream_workshop.client_row_filter(client_uid STRING)
+CREATE OR REPLACE FUNCTION clickstream_dev.gold.client_row_filter(client_uid STRING)
   RETURN IS_MEMBER('data_engineer') OR client_uid = CURRENT_USER();
 
 -- COMMAND ----------
 
 -- Apply row filter to dim_job
-ALTER TABLE flexhire.clickstream_workshop.dim_job
-  SET ROW FILTER flexhire.clickstream_workshop.client_row_filter ON (client_uid);
+ALTER TABLE clickstream_dev.gold.dim_job
+  SET ROW FILTER clickstream_dev.gold.client_row_filter ON (client_uid);
 
 -- COMMAND ----------
 
 -- Verify row filter is in place — a non-engineer user should only see their own rows
-DESCRIBE EXTENDED flexhire.clickstream_workshop.dim_job;
+DESCRIBE EXTENDED clickstream_dev.gold.dim_job;
 
 -- COMMAND ----------
 -- MAGIC %md
@@ -183,7 +183,7 @@ SELECT
     request_params.table_full_name AS table_name
 FROM system.access.audit
 WHERE action_name IN ('SELECT', 'CREATE TABLE', 'ALTER TABLE', 'GRANT')
-  AND request_params.table_full_name LIKE 'flexhire.clickstream_workshop.%'
+  AND request_params.table_full_name LIKE 'clickstream_dev.%'
 ORDER BY event_time DESC
 LIMIT 50;
 
@@ -196,7 +196,7 @@ SELECT
     target_table_full_name,
     target_column_name
 FROM system.lineage.column_lineage
-WHERE target_table_full_name = 'flexhire.clickstream_workshop.fact_search_events'
+WHERE target_table_full_name = 'clickstream_dev.gold.fact_search_events'
 ORDER BY target_column_name;
 
 -- COMMAND ----------
@@ -222,9 +222,9 @@ ORDER BY target_column_name;
 -- COMMAND ----------
 
 -- Replace <SP_ID> with the application UUID returned above
-GRANT USE CATALOG ON CATALOG flexhire                      TO `<SP_ID>`;
-GRANT USE SCHEMA  ON SCHEMA  flexhire.clickstream_workshop TO `<SP_ID>`;
-GRANT SELECT      ON SCHEMA  flexhire.clickstream_workshop TO `<SP_ID>`;
+GRANT USE CATALOG ON CATALOG clickstream_dev                      TO `<SP_ID>`;
+GRANT USE SCHEMA  ON SCHEMA  clickstream_dev.gold TO `<SP_ID>`;
+GRANT SELECT      ON SCHEMA  clickstream_dev.gold TO `<SP_ID>`;
 
 -- COMMAND ----------
 -- MAGIC %md
