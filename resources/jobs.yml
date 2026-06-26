@@ -5,7 +5,7 @@ resources:
       tasks:
         - task_key: create_metric_views
           notebook_task:
-            notebook_path: ../src/sql/metric_views.sql
+            notebook_path: ../src/semantic/mv_clickstream_analytics.sql
             source: WORKSPACE
             warehouse_id: ${var.warehouse_id}
         - task_key: create_report_views

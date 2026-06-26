@@ -131,42 +131,67 @@
             "name": "pipelineid",
             "queries": [
               {
-                "name": "q_rows_processed",
+                "name": "parameter_dashboards/01f170bd9e37148f9c280933c350f67f/datasets/01f170bd9e3716bfaf850a3a049adbd1_pipeline_id",
                 "query": {
                   "datasetName": "rows_processed_vs_dropped",
-                  "parameters": [{"name": "pipeline_id", "keyword": "pipeline_id"}],
+                  "parameters": [
+                    {
+                      "name": "pipeline_id",
+                      "keyword": "pipeline_id"
+                    }
+                  ],
                   "disaggregated": false
                 }
               },
               {
-                "name": "q_expectation_breakdown",
+                "name": "parameter_dashboards/01f170bd9e37148f9c280933c350f67f/datasets/01f170bd9e3716d8817121bf7a11f394_pipeline_id",
                 "query": {
                   "datasetName": "expectation_breakdown",
-                  "parameters": [{"name": "pipeline_id", "keyword": "pipeline_id"}],
+                  "parameters": [
+                    {
+                      "name": "pipeline_id",
+                      "keyword": "pipeline_id"
+                    }
+                  ],
                   "disaggregated": false
                 }
               },
               {
-                "name": "q_top_failing",
+                "name": "parameter_dashboards/01f170bd9e37148f9c280933c350f67f/datasets/01f170bd9e3716dd8dd57739335f348c_pipeline_id",
                 "query": {
                   "datasetName": "top_failing_expectations",
-                  "parameters": [{"name": "pipeline_id", "keyword": "pipeline_id"}],
+                  "parameters": [
+                    {
+                      "name": "pipeline_id",
+                      "keyword": "pipeline_id"
+                    }
+                  ],
                   "disaggregated": false
                 }
               },
               {
-                "name": "q_drop_rate_trend",
+                "name": "parameter_dashboards/01f170bd9e37148f9c280933c350f67f/datasets/01f170bd9e3716e2a4805027ac1a1ccf_pipeline_id",
                 "query": {
                   "datasetName": "drop_rate_trend",
-                  "parameters": [{"name": "pipeline_id", "keyword": "pipeline_id"}],
+                  "parameters": [
+                    {
+                      "name": "pipeline_id",
+                      "keyword": "pipeline_id"
+                    }
+                  ],
                   "disaggregated": false
                 }
               },
               {
-                "name": "q_expectation_event_log",
+                "name": "parameter_dashboards/01f170bd9e37148f9c280933c350f67f/datasets/01f170bd9e3716e69d4f4365041bd96f_pipeline_id",
                 "query": {
                   "datasetName": "expectation_event_log",
-                  "parameters": [{"name": "pipeline_id", "keyword": "pipeline_id"}],
+                  "parameters": [
+                    {
+                      "name": "pipeline_id",
+                      "keyword": "pipeline_id"
+                    }
+                  ],
                   "disaggregated": false
                 }
               }
@@ -175,13 +200,30 @@
               "version": 2,
               "frame": {
                 "showTitle": true,
-                "title": "Pipeline ID"
+                "title": "PIPELINE ID"
               },
               "widgetType": "filter-text-entry",
               "encodings": {
                 "fields": [
                   {
-                    "parameterName": "pipeline_id"
+                    "parameterName": "pipeline_id",
+                    "queryName": "parameter_dashboards/01f170bd9e37148f9c280933c350f67f/datasets/01f170bd9e3716bfaf850a3a049adbd1_pipeline_id"
+                  },
+                  {
+                    "parameterName": "pipeline_id",
+                    "queryName": "parameter_dashboards/01f170bd9e37148f9c280933c350f67f/datasets/01f170bd9e3716d8817121bf7a11f394_pipeline_id"
+                  },
+                  {
+                    "parameterName": "pipeline_id",
+                    "queryName": "parameter_dashboards/01f170bd9e37148f9c280933c350f67f/datasets/01f170bd9e3716dd8dd57739335f348c_pipeline_id"
+                  },
+                  {
+                    "parameterName": "pipeline_id",
+                    "queryName": "parameter_dashboards/01f170bd9e37148f9c280933c350f67f/datasets/01f170bd9e3716e2a4805027ac1a1ccf_pipeline_id"
+                  },
+                  {
+                    "parameterName": "pipeline_id",
+                    "queryName": "parameter_dashboards/01f170bd9e37148f9c280933c350f67f/datasets/01f170bd9e3716e69d4f4365041bd96f_pipeline_id"
                   }
                 ]
               }

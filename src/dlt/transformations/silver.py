@@ -141,6 +141,7 @@ def search_events():
     return (
         spark.readStream
         .table("bronze.search_events")
+        .withColumnRenamed("collector_ts", "event_ts")
     )
 
 # COMMAND ----------
@@ -159,6 +160,7 @@ def impression_events():
     return (
         spark.readStream
         .table("bronze.impression_events")
+        .withColumnRenamed("collector_ts", "event_ts")
         .withColumn("position", integer("position"))
         .withColumn("is_bot", is_bot("is_bot"))
     )
@@ -199,6 +201,7 @@ def click_events():
     return (
         spark.readStream
         .table("bronze.click_events")
+        .withColumnRenamed("collector_ts", "event_ts")
         .withColumn("position", integer("position"))
         .withColumn("time_to_click_secs", numeric("time_to_click_secs"))
         .withColumn("is_bot", is_bot("is_bot"))
@@ -206,6 +209,48 @@ def click_events():
 
 # COMMAND ----------
 # MAGIC %md
+# MAGIC ### fact_search_funnel
+# MAGIC
+# MAGIC Impression-grain session fact table. Joins search context, impression, and click
+# MAGIC outcome into a single row per impression — the canonical grain for CTR analysis.
+# MAGIC Uses `spark.read` (batch snapshot) because click latency is unbounded; streaming
+# MAGIC joins would require watermarks that would delay or drop valid late-arriving clicks.
+
+# COMMAND ----------
+
+@dp.table(
+    name="silver.fact_search_funnel",
+    comment="Impression-grain session table — search context joined with impressions and click outcomes",
+    table_properties={"quality": "silver"},
+)
+def fact_search_funnel():
+    searches = spark.read.table("silver.search_events").select(
+        "search_guid",
+        "visitor_id",
+        "search_query",
+        "sublocation",
+        F.col("ingest_ts").alias("search_ts"),
+    )
+    impressions = spark.read.table("silver.impression_events").select(
+        F.col("event_id").alias("impression_id"),
+        "search_guid",
+        "opening_uid",
+        "position",
+    )
+    clicks = spark.read.table("silver.click_events").select(
+        F.col("event_id").alias("click_id"),
+        "search_guid",
+        "opening_uid",
+        "time_to_click_secs",
+    )
+    return (
+        searches
+        .join(impressions, on="search_guid", how="left")
+        .join(clicks, on=["search_guid", "opening_uid"], how="left")
+    )
+
+# COMMAND ----------
+# MAGIC %md
 # MAGIC ---
-# MAGIC **Silver complete.** Six validated tables are ready for aggregation.
-# MAGIC Open `gold.py` to build the business-facing metrics layer.
+# MAGIC **Silver complete.** Seven validated tables are ready for aggregation.
+# MAGIC Open `gold.sql` to build the business-facing metrics layer.

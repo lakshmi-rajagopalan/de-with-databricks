@@ -8,9 +8,7 @@
 -- =============================================================================
 CREATE OR REFRESH MATERIALIZED VIEW gold.job_performance_ctr
 AS
-WITH JOBS AS (
-    SELECT * FROM silver.job_openings
-), JOB_IMPRESSIONS AS (
+WITH JOB_IMPRESSIONS AS (
     SELECT
         opening_uid,
         count(event_id)                         AS impressions,
@@ -40,7 +38,7 @@ SELECT
     jc.avg_click_time,
     jc.click_time_quantiles,
     round(jc.clicks / ji.impressions * 100, 2) AS ctr_pct
-FROM JOBS j
+FROM silver.job_openings j
 LEFT JOIN JOB_IMPRESSIONS ji ON j.opening_uid = ji.opening_uid
 LEFT JOIN JOB_CLICKS jc      ON j.opening_uid = jc.opening_uid;
 
@@ -48,68 +46,40 @@ LEFT JOIN JOB_CLICKS jc      ON j.opening_uid = jc.opening_uid;
 -- =============================================================================
 -- Impression Position CTR
 -- Position bias analysis: how CTR and click time vary by search result position
+-- Reads from silver.fact_search_funnel — join already resolved upstream
 -- =============================================================================
 CREATE OR REFRESH MATERIALIZED VIEW gold.impression_position_ctr
 AS
-WITH JOB_IMPRESSIONS AS (
-    SELECT
-        position                AS page_position,
-        count(event_id)         AS impressions
-    FROM silver.impression_events
-    GROUP BY page_position
-), JOB_CLICKS AS (
-    SELECT
-        position                        AS page_position,
-        avg(time_to_click_secs)         AS avg_click_time
-    FROM silver.click_events
-    GROUP BY page_position
-)
 SELECT
-    ji.page_position,
-    ji.impressions,
-    jc.avg_click_time
-FROM JOB_IMPRESSIONS ji
-LEFT JOIN JOB_CLICKS jc ON ji.page_position = jc.page_position
-ORDER BY page_position ASC;
+    position                                                    AS page_position,
+    count(impression_id)                                        AS impressions,
+    count(click_id)                                             AS clicks,
+    round(count(click_id) / count(impression_id) * 100, 2)     AS ctr_pct,
+    round(avg(time_to_click_secs), 1)                           AS avg_click_time
+FROM silver.fact_search_funnel
+WHERE position IS NOT NULL
+GROUP BY position
+ORDER BY position ASC;
 
 
 -- =============================================================================
 -- Search Query Performance
 -- Per-query funnel: which search terms drive the most traffic and clicks
+-- Reads from silver.fact_search_funnel — join already resolved upstream
 -- =============================================================================
 CREATE OR REFRESH MATERIALIZED VIEW gold.search_query_performance
 AS
-WITH SEARCHES AS (
-    SELECT search_guid, search_query FROM silver.search_events
-), IMP_AGG AS (
-    SELECT
-        s.search_query,
-        count(i.event_id)                       AS impressions,
-        approx_count_distinct(i.visitor_id)     AS unique_visitors,
-        approx_count_distinct(i.opening_uid)    AS unique_jobs_shown,
-        approx_count_distinct(i.search_guid)    AS search_sessions
-    FROM silver.impression_events i
-    LEFT JOIN SEARCHES s ON i.search_guid = s.search_guid
-    GROUP BY s.search_query
-), CLK_AGG AS (
-    SELECT
-        s.search_query,
-        count(c.event_id)   AS clicks
-    FROM silver.click_events c
-    LEFT JOIN SEARCHES s ON c.search_guid = s.search_guid
-    WHERE c.opening_uid IS NOT NULL
-    GROUP BY s.search_query
-)
 SELECT
-    i.search_query,
-    i.impressions,
-    i.unique_visitors,
-    i.unique_jobs_shown,
-    i.search_sessions,
-    c.clicks,
-    round(c.clicks / i.impressions * 100, 2) AS ctr_pct
-FROM IMP_AGG i
-LEFT JOIN CLK_AGG c ON i.search_query = c.search_query
+    search_query,
+    count(impression_id)                        AS impressions,
+    approx_count_distinct(visitor_id)           AS unique_visitors,
+    approx_count_distinct(opening_uid)          AS unique_jobs_shown,
+    approx_count_distinct(search_guid)          AS search_sessions,
+    count(click_id)                             AS clicks,
+    round(count(click_id) / count(impression_id) * 100, 2) AS ctr_pct
+FROM silver.fact_search_funnel
+WHERE search_query IS NOT NULL
+GROUP BY search_query
 ORDER BY impressions DESC;
 
 
@@ -138,7 +108,7 @@ WITH JOB_AGG AS (
 ), CLK_AGG AS (
     SELECT
         j.category,
-        count(c.event_id)   AS clicks
+        coalesce(count(c.event_id), 0)   AS clicks
     FROM silver.click_events c
     LEFT JOIN silver.job_openings j ON c.opening_uid = j.opening_uid
     WHERE c.opening_uid IS NOT NULL
@@ -162,40 +132,22 @@ ORDER BY impressions DESC;
 -- =============================================================================
 -- Sublocation Performance
 -- Do featured job placements outperform organic search results?
+-- Reads from silver.fact_search_funnel — join already resolved upstream
 -- =============================================================================
 CREATE OR REFRESH MATERIALIZED VIEW gold.sublocation_performance
 AS
-WITH IMP_AGG AS (
-    SELECT
-        s.sublocation,
-        count(i.event_id)                       AS impressions,
-        approx_count_distinct(i.visitor_id)     AS unique_visitors,
-        approx_count_distinct(i.opening_uid)    AS unique_jobs,
-        round(avg(i.position), 1)               AS avg_position
-    FROM silver.impression_events i
-    LEFT JOIN silver.search_events s ON i.search_guid = s.search_guid
-    GROUP BY s.sublocation
-), CLK_AGG AS (
-    SELECT
-        s.sublocation,
-        count(c.event_id)                       AS clicks,
-        round(avg(c.time_to_click_secs), 1)     AS avg_click_time
-    FROM silver.click_events c
-    LEFT JOIN silver.search_events s ON c.search_guid = s.search_guid
-    WHERE c.opening_uid IS NOT NULL
-    GROUP BY s.sublocation
-)
 SELECT
-    ia.sublocation,
-    ia.impressions,
-    ia.unique_visitors,
-    ia.unique_jobs,
-    ia.avg_position,
-    ca.clicks,
-    ca.avg_click_time,
-    round(ca.clicks / ia.impressions * 100, 2) AS ctr_pct
-FROM IMP_AGG ia
-LEFT JOIN CLK_AGG ca ON ia.sublocation = ca.sublocation
+    sublocation,
+    count(impression_id)                                        AS impressions,
+    approx_count_distinct(visitor_id)                           AS unique_visitors,
+    approx_count_distinct(opening_uid)                          AS unique_jobs,
+    round(avg(position), 1)                                     AS avg_position,
+    count(click_id)                                             AS clicks,
+    round(avg(time_to_click_secs), 1)                           AS avg_click_time,
+    round(count(click_id) / count(impression_id) * 100, 2)     AS ctr_pct
+FROM silver.fact_search_funnel
+WHERE sublocation IS NOT NULL
+GROUP BY sublocation
 ORDER BY sublocation;
 
 
@@ -207,18 +159,17 @@ CREATE OR REFRESH MATERIALIZED VIEW gold.daily_metrics
 AS
 WITH IMP_DAILY AS (
     SELECT
-        cast(date_trunc('day', s.event_ts) AS date)     AS event_date,
+        cast(date_trunc('day', i.event_ts) AS date)     AS event_date,
         count(i.event_id)                               AS impressions,
         approx_count_distinct(i.visitor_id)             AS unique_visitors,
         approx_count_distinct(i.search_guid)            AS search_sessions,
         approx_count_distinct(i.opening_uid)            AS unique_jobs_shown
     FROM silver.impression_events i
-    LEFT JOIN silver.search_events s ON i.search_guid = s.search_guid
     GROUP BY event_date
 ), CLK_DAILY AS (
     SELECT
         cast(date_trunc('day', event_ts) AS date)   AS event_date,
-        count(event_id)                             AS clicks,
+        coalesce(count(event_id), 0)               AS clicks,
         round(avg(time_to_click_secs), 1)           AS avg_click_time
     FROM silver.click_events
     GROUP BY event_date
@@ -235,3 +186,70 @@ SELECT
 FROM IMP_DAILY id
 LEFT JOIN CLK_DAILY cd ON id.event_date = cd.event_date
 ORDER BY event_date;
+
+
+-- =============================================================================
+-- Visitor Engagement
+-- Per-visitor activity: impressions seen, searches made, unique jobs explored
+-- No joins — single table aggregation, guaranteed incremental with row tracking
+-- =============================================================================
+CREATE OR REFRESH MATERIALIZED VIEW gold.visitor_engagement
+AS
+SELECT
+    visitor_id,
+    coalesce(count(event_id), 0)                     AS total_impressions,
+    approx_count_distinct(search_guid)  AS total_searches,
+    approx_count_distinct(opening_uid)  AS unique_jobs_seen
+FROM silver.impression_events
+GROUP BY visitor_id;
+
+
+-- =============================================================================
+-- Job Click Engagement
+-- Per-job click depth: volume, unique clickers, and click speed distribution
+-- No joins — single table aggregation, guaranteed incremental with row tracking
+-- =============================================================================
+CREATE OR REFRESH MATERIALIZED VIEW gold.job_click_engagement
+AS
+SELECT
+    opening_uid,
+    coalesce(count(event_id), 0)                                         AS total_clicks,
+    approx_count_distinct(visitor_id)                       AS unique_clickers,
+    coalesce(round(avg(time_to_click_secs), 2), 0)                       AS avg_time_to_click,
+    percentile(time_to_click_secs, array(0.25, 0.5, 0.75)) AS click_time_quantiles
+FROM silver.click_events
+GROUP BY opening_uid;
+
+
+-- =============================================================================
+-- Search to Click Conversion
+-- Which search queries and sublocations drive actual clicks
+-- INNER JOIN avoids retroactive-NULL problem of LEFT JOIN, safe for incremental
+-- =============================================================================
+CREATE OR REFRESH MATERIALIZED VIEW gold.search_to_click_conversion
+AS
+SELECT
+    s.search_query,
+    s.sublocation,
+    count(DISTINCT s.search_guid)       AS searches_with_clicks,
+    count(c.event_id)                   AS total_clicks,
+    round(avg(c.time_to_click_secs), 2) AS avg_time_to_click
+FROM silver.search_events s
+INNER JOIN silver.click_events c ON s.search_guid = c.search_guid
+GROUP BY s.search_query, s.sublocation;
+
+
+-- =============================================================================
+-- Hourly Activity
+-- Hour-of-day traffic pattern for capacity planning and anomaly detection
+-- No joins — single table aggregation, guaranteed incremental with row tracking
+-- =============================================================================
+CREATE OR REFRESH MATERIALIZED VIEW gold.hourly_activity
+AS
+SELECT
+    hour(event_ts)                      AS hour_of_day,
+    count(event_id)                     AS impressions,
+    approx_count_distinct(visitor_id)   AS unique_visitors
+FROM silver.impression_events
+GROUP BY hour(event_ts)
+ORDER BY hour_of_day;

@@ -3,32 +3,32 @@
     {
       "name": "funnel_summary",
       "displayName": "1 · Funnel Summary",
-      "query": "SELECT SUM(impressions) AS total_impressions, SUM(clicks) AS total_clicks, ROUND(SUM(clicks) / SUM(impressions) * 100, 2) AS overall_ctr_pct, COUNT(DISTINCT opening_uid) AS jobs_in_results FROM clickstream_dev.gold.job_performance"
+      "query": "SELECT SUM(impressions) AS total_impressions, SUM(clicks) AS total_clicks, ROUND(SUM(clicks) / SUM(impressions) * 100, 2) AS overall_ctr_pct, COUNT(DISTINCT opening_uid) AS jobs_in_results FROM clickstream_dev.gold.job_performance_ctr"
     },
     {
       "name": "top_jobs_by_impressions",
       "displayName": "2 · Top 10 Jobs by Impressions",
-      "query": "SELECT title, category, budget_type, numeric_budget_amount, impressions, clicks, ctr_pct, avg_impression_position, avg_time_to_click_secs FROM clickstream_dev.gold.job_performance WHERE impressions IS NOT NULL ORDER BY impressions DESC LIMIT 10"
+      "query": "SELECT gp.title, j.category, j.budget_type, j.numeric_budget_amount, gp.impressions, gp.clicks, gp.ctr_pct, gp.avg_impression_position, gp.avg_click_time FROM clickstream_dev.gold.job_performance_ctr gp LEFT JOIN clickstream_dev.silver.job_openings j USING (opening_uid) WHERE gp.impressions IS NOT NULL ORDER BY gp.impressions DESC LIMIT 10"
     },
     {
       "name": "top_jobs_by_ctr",
       "displayName": "3 · Top 10 Jobs by CTR",
-      "query": "SELECT title, category, budget_type, numeric_budget_amount, impressions, clicks, ctr_pct, avg_impression_position FROM clickstream_dev.gold.job_performance WHERE impressions >= 5 ORDER BY ctr_pct DESC LIMIT 10"
+      "query": "SELECT gp.title, j.category, j.budget_type, j.numeric_budget_amount, gp.impressions, gp.clicks, gp.ctr_pct, gp.avg_impression_position FROM clickstream_dev.gold.job_performance_ctr gp LEFT JOIN clickstream_dev.silver.job_openings j USING (opening_uid) WHERE gp.impressions >= 5 ORDER BY gp.ctr_pct DESC LIMIT 10"
     },
     {
       "name": "position_bias",
       "displayName": "4 · Position Bias Curve",
-      "query": "SELECT position, impressions, clicks, ctr_pct, avg_time_to_click_secs FROM clickstream_dev.gold.position_ctr WHERE position <= 20 ORDER BY position"
+      "query": "SELECT page_position, impressions, avg_click_time FROM clickstream_dev.gold.impression_position_ctr WHERE page_position <= 20 ORDER BY page_position"
     },
     {
       "name": "category_performance",
       "displayName": "5 · Category Performance",
-      "query": "SELECT category, job_count, active_jobs, ROUND(avg_budget_amount, 0) AS avg_budget_amount, impressions, unique_visitors, clicks, ctr_pct FROM clickstream_dev.gold.category_performance WHERE category IS NOT NULL ORDER BY impressions DESC"
+      "query": "SELECT category, job_count, active_jobs, ROUND(avg_budget, 0) AS avg_budget, impressions, unique_visitors, clicks, ctr_pct FROM clickstream_dev.gold.category_performance WHERE category IS NOT NULL ORDER BY impressions DESC"
     },
     {
       "name": "category_ctr_vs_budget",
       "displayName": "6 · Category CTR vs Budget",
-      "query": "SELECT category, ROUND(avg_budget_amount, 0) AS avg_budget_amount, ctr_pct, impressions FROM clickstream_dev.gold.category_performance WHERE category IS NOT NULL AND avg_budget_amount IS NOT NULL"
+      "query": "SELECT category, ROUND(avg_budget, 0) AS avg_budget, ctr_pct, impressions FROM clickstream_dev.gold.category_performance WHERE category IS NOT NULL AND avg_budget IS NOT NULL"
     },
     {
       "name": "search_query_performance",
@@ -38,12 +38,12 @@
     {
       "name": "sublocation_performance",
       "displayName": "8 · Featured Jobs vs Search Results",
-      "query": "SELECT sublocation, impressions, unique_visitors, unique_jobs, avg_position, clicks, ctr_pct, avg_time_to_click_secs FROM clickstream_dev.gold.sublocation_performance ORDER BY sublocation"
+      "query": "SELECT sublocation, impressions, unique_visitors, unique_jobs, avg_position, clicks, ctr_pct, avg_click_time FROM clickstream_dev.gold.sublocation_performance ORDER BY sublocation"
     },
     {
       "name": "daily_trend",
       "displayName": "9 · Daily Trend",
-      "query": "SELECT event_date, impressions, unique_visitors, search_sessions, unique_jobs_shown, clicks, ctr_pct, avg_time_to_click_secs FROM clickstream_dev.gold.daily_metrics ORDER BY event_date"
+      "query": "SELECT event_date, impressions, unique_visitors, search_sessions, unique_jobs_shown, clicks, ctr_pct, avg_click_time FROM clickstream_dev.gold.daily_metrics ORDER BY event_date"
     },
     {
       "name": "time_to_click",
@@ -53,17 +53,12 @@
     {
       "name": "budget_type_distribution",
       "displayName": "11 · Budget Type Distribution",
-      "query": "SELECT budget_type, COUNT(*) AS job_count, ROUND(AVG(numeric_budget_amount), 2) AS avg_budget_amount, SUM(impressions) AS total_impressions, ROUND(SUM(clicks) / SUM(impressions) * 100, 2) AS ctr_pct FROM clickstream_dev.gold.job_performance WHERE budget_type IS NOT NULL GROUP BY budget_type ORDER BY job_count DESC"
+      "query": "SELECT j.budget_type, COUNT(*) AS job_count, ROUND(AVG(j.numeric_budget_amount), 2) AS avg_budget_amount, SUM(gp.impressions) AS total_impressions, ROUND(SUM(gp.clicks) / SUM(gp.impressions) * 100, 2) AS ctr_pct FROM clickstream_dev.silver.job_openings j LEFT JOIN clickstream_dev.gold.job_performance_ctr gp USING (opening_uid) WHERE j.budget_type IS NOT NULL GROUP BY j.budget_type ORDER BY job_count DESC"
     },
     {
       "name": "client_activity",
       "displayName": "12 · Client Activity Summary",
-      "query": "SELECT j.client_uid, COUNT(DISTINCT j.opening_uid) AS jobs_posted, SUM(gp.impressions) AS total_impressions, SUM(gp.clicks) AS total_clicks, ROUND(SUM(gp.clicks) / SUM(gp.impressions) * 100, 2) AS avg_ctr_pct, ROUND(AVG(j.numeric_budget_amount), 2) AS avg_budget_amount FROM clickstream_dev.silver.job_openings j LEFT JOIN clickstream_dev.gold.job_performance gp USING (opening_uid) GROUP BY j.client_uid ORDER BY total_impressions DESC LIMIT 15"
-    },
-    {
-      "name": "session_funnel",
-      "displayName": "13 · Session-Level Funnel (Star Schema)",
-      "query": "SELECT CASE WHEN impressions_in_session = 1 THEN '1 impression' WHEN impressions_in_session <= 3 THEN '2-3 impressions' WHEN impressions_in_session <= 5 THEN '4-5 impressions' WHEN impressions_in_session <= 10 THEN '6-10 impressions' ELSE '> 10 impressions' END AS session_size, COUNT(DISTINCT search_guid) AS sessions, SUM(CASE WHEN any_clicked THEN 1 ELSE 0 END) AS sessions_with_click, ROUND(SUM(CASE WHEN any_clicked THEN 1 ELSE 0 END) / COUNT(DISTINCT search_guid) * 100, 1) AS session_conversion_pct FROM (SELECT search_guid, COUNT(*) AS impressions_in_session, MAX(CAST(was_clicked AS INT)) = 1 AS any_clicked FROM clickstream_dev.gold.fact_search_events GROUP BY search_guid) sessions GROUP BY session_size ORDER BY sessions DESC"
+      "query": "SELECT j.client_uid, COUNT(DISTINCT j.opening_uid) AS jobs_posted, SUM(gp.impressions) AS total_impressions, SUM(gp.clicks) AS total_clicks, ROUND(SUM(gp.clicks) / SUM(gp.impressions) * 100, 2) AS avg_ctr_pct, ROUND(AVG(j.numeric_budget_amount), 2) AS avg_budget_amount FROM clickstream_dev.silver.job_openings j LEFT JOIN clickstream_dev.gold.job_performance_ctr gp USING (opening_uid) GROUP BY j.client_uid ORDER BY total_impressions DESC LIMIT 15"
     }
   ],
   "pages": [
@@ -241,20 +236,16 @@
                   "datasetName": "position_bias",
                   "fields": [
                     {
-                      "name": "position",
-                      "expression": "`position`"
+                      "name": "page_position",
+                      "expression": "`page_position`"
                     },
                     {
                       "name": "impressions",
                       "expression": "`impressions`"
                     },
                     {
-                      "name": "clicks",
-                      "expression": "`clicks`"
-                    },
-                    {
-                      "name": "ctr_pct",
-                      "expression": "`ctr_pct`"
+                      "name": "avg_click_time",
+                      "expression": "`avg_click_time`"
                     }
                   ],
                   "disaggregated": true
@@ -271,7 +262,7 @@
               "encodings": {
                 "columns": [
                   {
-                    "fieldName": "position",
+                    "fieldName": "page_position",
                     "displayName": "Position"
                   },
                   {
@@ -279,12 +270,8 @@
                     "displayName": "Impressions"
                   },
                   {
-                    "fieldName": "clicks",
-                    "displayName": "Clicks"
-                  },
-                  {
-                    "fieldName": "ctr_pct",
-                    "displayName": "CTR %"
+                    "fieldName": "avg_click_time",
+                    "displayName": "Avg Click Time (s)"
                   }
                 ]
               }
@@ -510,6 +497,262 @@
             "width": 12,
             "height": 8
           }
+        },
+        {
+          "widget": {
+            "name": "top_jobs_by_ctr_table",
+            "queries": [
+              {
+                "name": "main_query",
+                "query": {
+                  "datasetName": "top_jobs_by_ctr",
+                  "fields": [
+                    {"name": "title", "expression": "`title`"},
+                    {"name": "category", "expression": "`category`"},
+                    {"name": "impressions", "expression": "`impressions`"},
+                    {"name": "clicks", "expression": "`clicks`"},
+                    {"name": "ctr_pct", "expression": "`ctr_pct`"},
+                    {"name": "avg_impression_position", "expression": "`avg_impression_position`"}
+                  ],
+                  "disaggregated": true
+                }
+              }
+            ],
+            "spec": {
+              "version": 2,
+              "frame": {"showTitle": true, "title": "Top Jobs by CTR"},
+              "widgetType": "table",
+              "encodings": {
+                "columns": [
+                  {"fieldName": "title", "displayName": "Job Title"},
+                  {"fieldName": "category", "displayName": "Category"},
+                  {"fieldName": "impressions", "displayName": "Impressions"},
+                  {"fieldName": "clicks", "displayName": "Clicks"},
+                  {"fieldName": "ctr_pct", "displayName": "CTR %"},
+                  {"fieldName": "avg_impression_position", "displayName": "Avg Position"}
+                ]
+              }
+            }
+          },
+          "position": {"x": 0, "y": 27, "width": 12, "height": 8}
+        },
+        {
+          "widget": {
+            "name": "category_performance_table",
+            "queries": [
+              {
+                "name": "main_query",
+                "query": {
+                  "datasetName": "category_performance",
+                  "fields": [
+                    {"name": "category", "expression": "`category`"},
+                    {"name": "job_count", "expression": "`job_count`"},
+                    {"name": "active_jobs", "expression": "`active_jobs`"},
+                    {"name": "avg_budget", "expression": "`avg_budget`"},
+                    {"name": "impressions", "expression": "`impressions`"},
+                    {"name": "clicks", "expression": "`clicks`"},
+                    {"name": "ctr_pct", "expression": "`ctr_pct`"}
+                  ],
+                  "disaggregated": true
+                }
+              }
+            ],
+            "spec": {
+              "version": 2,
+              "frame": {"showTitle": true, "title": "Category Performance"},
+              "widgetType": "table",
+              "encodings": {
+                "columns": [
+                  {"fieldName": "category", "displayName": "Category"},
+                  {"fieldName": "job_count", "displayName": "Jobs"},
+                  {"fieldName": "active_jobs", "displayName": "Active Jobs"},
+                  {"fieldName": "avg_budget", "displayName": "Avg Budget"},
+                  {"fieldName": "impressions", "displayName": "Impressions"},
+                  {"fieldName": "clicks", "displayName": "Clicks"},
+                  {"fieldName": "ctr_pct", "displayName": "CTR %"}
+                ]
+              }
+            }
+          },
+          "position": {"x": 0, "y": 35, "width": 12, "height": 8}
+        },
+        {
+          "widget": {
+            "name": "category_ctr_vs_budget_table",
+            "queries": [
+              {
+                "name": "main_query",
+                "query": {
+                  "datasetName": "category_ctr_vs_budget",
+                  "fields": [
+                    {"name": "category", "expression": "`category`"},
+                    {"name": "avg_budget", "expression": "`avg_budget`"},
+                    {"name": "ctr_pct", "expression": "`ctr_pct`"},
+                    {"name": "impressions", "expression": "`impressions`"}
+                  ],
+                  "disaggregated": true
+                }
+              }
+            ],
+            "spec": {
+              "version": 2,
+              "frame": {"showTitle": true, "title": "Category CTR vs Budget"},
+              "widgetType": "table",
+              "encodings": {
+                "columns": [
+                  {"fieldName": "category", "displayName": "Category"},
+                  {"fieldName": "avg_budget", "displayName": "Avg Budget"},
+                  {"fieldName": "ctr_pct", "displayName": "CTR %"},
+                  {"fieldName": "impressions", "displayName": "Impressions"}
+                ]
+              }
+            }
+          },
+          "position": {"x": 0, "y": 43, "width": 6, "height": 8}
+        },
+        {
+          "widget": {
+            "name": "sublocation_performance_table",
+            "queries": [
+              {
+                "name": "main_query",
+                "query": {
+                  "datasetName": "sublocation_performance",
+                  "fields": [
+                    {"name": "sublocation", "expression": "`sublocation`"},
+                    {"name": "impressions", "expression": "`impressions`"},
+                    {"name": "clicks", "expression": "`clicks`"},
+                    {"name": "ctr_pct", "expression": "`ctr_pct`"},
+                    {"name": "avg_position", "expression": "`avg_position`"},
+                    {"name": "avg_click_time", "expression": "`avg_click_time`"}
+                  ],
+                  "disaggregated": true
+                }
+              }
+            ],
+            "spec": {
+              "version": 2,
+              "frame": {"showTitle": true, "title": "Featured vs Search Results"},
+              "widgetType": "table",
+              "encodings": {
+                "columns": [
+                  {"fieldName": "sublocation", "displayName": "Placement"},
+                  {"fieldName": "impressions", "displayName": "Impressions"},
+                  {"fieldName": "clicks", "displayName": "Clicks"},
+                  {"fieldName": "ctr_pct", "displayName": "CTR %"},
+                  {"fieldName": "avg_position", "displayName": "Avg Position"},
+                  {"fieldName": "avg_click_time", "displayName": "Avg Click Time (s)"}
+                ]
+              }
+            }
+          },
+          "position": {"x": 6, "y": 43, "width": 6, "height": 8}
+        },
+        {
+          "widget": {
+            "name": "time_to_click_table",
+            "queries": [
+              {
+                "name": "main_query",
+                "query": {
+                  "datasetName": "time_to_click",
+                  "fields": [
+                    {"name": "latency_bucket", "expression": "`latency_bucket`"},
+                    {"name": "clicks", "expression": "`clicks`"},
+                    {"name": "avg_secs", "expression": "`avg_secs`"}
+                  ],
+                  "disaggregated": true
+                }
+              }
+            ],
+            "spec": {
+              "version": 2,
+              "frame": {"showTitle": true, "title": "Time-to-Click Distribution"},
+              "widgetType": "table",
+              "encodings": {
+                "columns": [
+                  {"fieldName": "latency_bucket", "displayName": "Latency Bucket"},
+                  {"fieldName": "clicks", "displayName": "Clicks"},
+                  {"fieldName": "avg_secs", "displayName": "Avg Secs"}
+                ]
+              }
+            }
+          },
+          "position": {"x": 0, "y": 51, "width": 6, "height": 8}
+        },
+        {
+          "widget": {
+            "name": "budget_type_table",
+            "queries": [
+              {
+                "name": "main_query",
+                "query": {
+                  "datasetName": "budget_type_distribution",
+                  "fields": [
+                    {"name": "budget_type", "expression": "`budget_type`"},
+                    {"name": "job_count", "expression": "`job_count`"},
+                    {"name": "avg_budget_amount", "expression": "`avg_budget_amount`"},
+                    {"name": "total_impressions", "expression": "`total_impressions`"},
+                    {"name": "ctr_pct", "expression": "`ctr_pct`"}
+                  ],
+                  "disaggregated": true
+                }
+              }
+            ],
+            "spec": {
+              "version": 2,
+              "frame": {"showTitle": true, "title": "Budget Type Distribution"},
+              "widgetType": "table",
+              "encodings": {
+                "columns": [
+                  {"fieldName": "budget_type", "displayName": "Budget Type"},
+                  {"fieldName": "job_count", "displayName": "Jobs"},
+                  {"fieldName": "avg_budget_amount", "displayName": "Avg Budget"},
+                  {"fieldName": "total_impressions", "displayName": "Impressions"},
+                  {"fieldName": "ctr_pct", "displayName": "CTR %"}
+                ]
+              }
+            }
+          },
+          "position": {"x": 6, "y": 51, "width": 6, "height": 8}
+        },
+        {
+          "widget": {
+            "name": "client_activity_table",
+            "queries": [
+              {
+                "name": "main_query",
+                "query": {
+                  "datasetName": "client_activity",
+                  "fields": [
+                    {"name": "client_uid", "expression": "`client_uid`"},
+                    {"name": "jobs_posted", "expression": "`jobs_posted`"},
+                    {"name": "total_impressions", "expression": "`total_impressions`"},
+                    {"name": "total_clicks", "expression": "`total_clicks`"},
+                    {"name": "avg_ctr_pct", "expression": "`avg_ctr_pct`"},
+                    {"name": "avg_budget_amount", "expression": "`avg_budget_amount`"}
+                  ],
+                  "disaggregated": true
+                }
+              }
+            ],
+            "spec": {
+              "version": 2,
+              "frame": {"showTitle": true, "title": "Client Activity Summary"},
+              "widgetType": "table",
+              "encodings": {
+                "columns": [
+                  {"fieldName": "client_uid", "displayName": "Client"},
+                  {"fieldName": "jobs_posted", "displayName": "Jobs Posted"},
+                  {"fieldName": "total_impressions", "displayName": "Impressions"},
+                  {"fieldName": "total_clicks", "displayName": "Clicks"},
+                  {"fieldName": "avg_ctr_pct", "displayName": "CTR %"},
+                  {"fieldName": "avg_budget_amount", "displayName": "Avg Budget"}
+                ]
+              }
+            }
+          },
+          "position": {"x": 0, "y": 59, "width": 12, "height": 8}
         }
       ],
       "pageType": "PAGE_TYPE_CANVAS",
