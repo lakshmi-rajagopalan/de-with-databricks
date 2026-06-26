@@ -1,7 +1,7 @@
 -- Databricks notebook source
 
 -- COMMAND ----------
--- Unified metric view over silver.fact_search_funnel.
+-- Unified metric view over gold.fact_search_funnel.
 -- Joins freelancers, job_openings, and clients so Genie can answer questions
 -- across the full clickstream funnel without requiring the analyst to write joins.
 
@@ -10,18 +10,18 @@ CREATE OR REPLACE VIEW clickstream_dev.gold.mv_clickstream_analytics
 WITH METRICS LANGUAGE YAML AS $$
 version: 1.1
 
-source: clickstream_dev.silver.fact_search_funnel
+source: clickstream_dev.gold.fact_search_funnel
 
 joins:
   - name: freelancers
-    source: clickstream_dev.silver.freelancers
+    source: clickstream_dev.gold.dim_freelancers
     "on": source.visitor_id = freelancers.visitor_id
   - name: job_openings
-    source: clickstream_dev.silver.job_openings
+    source: clickstream_dev.gold.dim_job_openings
     "on": source.opening_uid = job_openings.opening_uid
     joins:
       - name: clients
-        source: clickstream_dev.silver.clients
+        source: clickstream_dev.gold.dim_clients
         "on": job_openings.client_uid = clients.client_uid
 
 dimensions:
